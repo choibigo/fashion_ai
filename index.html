@@ -3,9 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Seoul Vibe - 서울 지역별 패션 큐레이터</title>
+    <title>Seoul Vibe - Interactive Map</title>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Outfit:wght@400;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
     <style>
         :root {
@@ -15,7 +16,7 @@
             --user-msg-text: #000000;
             --ai-msg: #272736;
             --ai-msg-text: #e0e0e0;
-            --accent: #ff4757; /* 서울의 네온사인 느낌을 주는 포인트 컬러 */
+            --accent: #ff4757;
         }
 
         * {
@@ -29,33 +30,53 @@
             background-color: var(--bg-color);
             color: #fff;
             display: flex;
-            justify-content: center;
-            align-items: center;
             height: 100vh;
-            /* 서울의 야경 느낌을 주는 그라데이션 배경 */
-            background-image: radial-gradient(circle at top right, #2c1b3d 0%, #0d0d12 60%);
+            overflow: hidden;
         }
 
-        .chat-container {
+        /* 전체 레이아웃: 좌측 지도, 우측 채팅 (PC 기준) */
+        .app-wrapper {
+            display: flex;
             width: 100%;
-            max-width: 450px;
-            height: 90vh;
-            background: rgba(26, 26, 36, 0.6);
+            height: 100%;
+        }
+
+        /* --- 지도 영역 --- */
+        .map-section {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* 💡 무료 지도를 다크모드처럼 보이게 만드는 CSS 마법 */
+        .leaflet-layer,
+        .leaflet-control-zoom-in,
+        .leaflet-control-zoom-out,
+        .leaflet-control-attribution {
+            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        }
+
+        /* --- 챗봇 영역 --- */
+        .chat-section {
+            width: 400px;
+            background: rgba(26, 26, 36, 0.95);
             backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 24px;
             display: flex;
             flex-direction: column;
-            overflow: hidden;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            border-left: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 2;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
         }
 
-        /* 헤더 디자인 */
         header {
             padding: 20px;
             text-align: center;
             border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(26, 26, 36, 0.8);
         }
 
         header h1 {
@@ -63,7 +84,6 @@
             font-size: 1.6rem;
             color: var(--accent);
             letter-spacing: 1px;
-            font-weight: 700;
         }
 
         header p {
@@ -72,7 +92,6 @@
             margin-top: 5px;
         }
 
-        /* 채팅 영역 */
         .chat-box {
             flex: 1;
             padding: 20px;
@@ -82,10 +101,11 @@
             gap: 15px;
         }
 
-        .chat-box::-webkit-scrollbar { width: 0; }
+        .chat-box::-webkit-scrollbar { width: 4px; }
+        .chat-box::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
 
         .message {
-            max-width: 82%;
+            max-width: 85%;
             padding: 14px 18px;
             border-radius: 20px;
             font-size: 0.95rem;
@@ -114,43 +134,12 @@
             border-bottom-right-radius: 4px;
         }
 
-        /* 지역 추천 태그 (새로 추가됨) */
-        .neighborhood-tags {
-            padding: 10px 20px;
-            display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-            background: rgba(26, 26, 36, 0.9);
-        }
-
-        .neighborhood-tags::-webkit-scrollbar { display: none; }
-
-        .tag {
-            background: rgba(255, 71, 87, 0.1);
-            color: var(--accent);
-            border: 1px solid rgba(255, 71, 87, 0.3);
-            padding: 6px 12px;
-            border-radius: 15px;
-            font-size: 0.8rem;
-            white-space: nowrap;
-            cursor: pointer;
-            transition: all 0.2s ease;
-        }
-
-        .tag:hover {
-            background: var(--accent);
-            color: #fff;
-        }
-
-        /* 입력 영역 */
         .input-area {
-            padding: 15px 20px;
-            background: rgba(26, 26, 36, 0.95);
+            padding: 20px;
+            background: var(--chat-bg);
             display: flex;
             gap: 10px;
-            align-items: center;
-            padding-bottom: 25px; /* 모바일 하단 여백 고려 */
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
         }
 
         .input-area input {
@@ -162,12 +151,10 @@
             border-radius: 30px;
             font-size: 0.95rem;
             outline: none;
-            transition: all 0.3s ease;
         }
 
         .input-area input:focus {
             border-color: var(--accent);
-            background: rgba(255, 255, 255, 0.08);
         }
 
         .input-area button {
@@ -178,16 +165,11 @@
             height: 48px;
             border-radius: 50%;
             cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
             font-size: 1.2rem;
-            transition: transform 0.2s ease;
+            transition: transform 0.2s;
         }
 
-        .input-area button:hover {
-            transform: scale(1.05);
-        }
+        .input-area button:hover { transform: scale(1.05); }
 
         /* 타이핑 인디케이터 */
         .typing-indicator {
@@ -216,58 +198,93 @@
             0%, 80%, 100% { transform: scale(0); }
             40% { transform: scale(1); }
         }
+
+        /* 모바일 반응형 (화면이 작아지면 지도를 위로, 채팅을 아래로 배치) */
+        @media (max-width: 768px) {
+            .app-wrapper { flex-direction: column; }
+            .map-section { height: 40vh; flex: none; }
+            .chat-section { width: 100%; height: 60vh; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 10;}
+        }
     </style>
 </head>
 <body>
 
-    <div class="chat-container">
-        <header>
-            <h1>Seoul Vibe</h1>
-            <p>서울 로컬 분위기에 맞춘 코디 큐레이션</p>
-        </header>
-
-        <main class="chat-box" id="chatBox">
-            <div class="message ai-message">
-                안녕하세요! 🌃<br>오늘 서울의 어느 동네로 가시나요? 장소를 알려주시면 그 동네 바이브에 딱 맞는 룩을 추천해 드릴게요.
-            </div>
-            
-            <div class="typing-indicator" id="typingIndicator">
-                <div class="dot"></div>
-                <div class="dot"></div>
-                <div class="dot"></div>
-            </div>
-        </main>
-
-        <div class="neighborhood-tags">
-            <div class="tag" onclick="setInput('이번 주말 성수동 팝업스토어 갈 건데 뭐 입지?')">#성수동</div>
-            <div class="tag" onclick="setInput('한남동 카페 갈 때 입을 깔끔한 옷 추천해줘')">#한남동</div>
-            <div class="tag" onclick="setInput('금요일 밤 홍대 갈 건데 힙하게 입고 싶어')">#홍대</div>
-            <div class="tag" onclick="setInput('압구정 로데오에서 저녁 약속 있어')">#압구정</div>
+    <div class="app-wrapper">
+        <div class="map-section">
+            <div id="map"></div>
         </div>
 
-        <div class="input-area">
-            <input type="text" id="userInput" placeholder="예: 한남동 데이트 갈 건데 코디 추천해줘" autocomplete="off">
-            <button id="sendBtn"><i class="fas fa-arrow-up"></i></button>
+        <div class="chat-section">
+            <header>
+                <h1>Seoul Vibe</h1>
+                <p>지도에서 동네를 클릭하거나 입력해보세요</p>
+            </header>
+
+            <main class="chat-box" id="chatBox">
+                <div class="message ai-message">
+                    안녕하세요! 🗺️<br>왼쪽 지도에서 가고 싶은 동네의 <b>파란색 마커</b>를 클릭해보세요. 그 동네 분위기에 딱 맞는 코디를 즉시 추천해 드릴게요!
+                </div>
+                
+                <div class="typing-indicator" id="typingIndicator">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                </div>
+            </main>
+
+            <div class="input-area">
+                <input type="text" id="userInput" placeholder="예: 한남동 데이트 룩 알려줘" autocomplete="off">
+                <button id="sendBtn"><i class="fas fa-arrow-up"></i></button>
+            </div>
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
     <script>
+        // --- 1. 지도 초기화 및 설정 ---
+        // 서울 중심 좌표로 지도 띄우기 (위도, 경도, 줌 레벨)
+        const map = L.map('map').setView([37.541, 126.986], 12);
+
+        // 오픈스트리트맵 타일 불러오기
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+
+        // 서울 주요 지역 마커 데이터 (위도, 경도, 이름, 챗봇에 보낼 질문)
+        const locations = [
+            { lat: 37.5445, lng: 127.0560, name: "성수동", query: "성수동 팝업스토어 갈 건데 코디 추천해줘" },
+            { lat: 37.5367, lng: 127.0000, name: "한남동", query: "한남동 예쁜 카페 갈 때 입을 옷 추천해줘" },
+            { lat: 37.5563, lng: 126.9227, name: "홍대", query: "홍대 길거리 돌아다닐 때 입을 힙한 룩 알려줘" },
+            { lat: 37.5270, lng: 127.0360, name: "압구정", query: "압구정 로데오 라운지 바에 갈 건데 뭐 입지?" }
+        ];
+
+        // 지도에 마커 찍고, 클릭 이벤트 연결하기
+        locations.forEach(loc => {
+            const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+            marker.bindPopup(`<b>${loc.name}</b><br>클릭해서 코디 추천받기`);
+            
+            // 마커 클릭 시 챗봇에 메시지 전송!
+            marker.on('click', function() {
+                // 모바일 환경을 위해 채팅창으로 스크롤(포커스)
+                if(window.innerWidth <= 768) {
+                    document.getElementById('userInput').focus();
+                }
+                processUserMessage(loc.query);
+            });
+        });
+
+        // --- 2. 챗봇 로직 ---
         const chatBox = document.getElementById('chatBox');
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
         const typingIndicator = document.getElementById('typingIndicator');
 
-        // 퀵 태그 클릭 시 인풋 창에 텍스트 입력
-        function setInput(text) {
-            userInput.value = text;
-            userInput.focus();
-        }
-
         function addMessage(text, sender) {
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
             msgDiv.innerHTML = text; 
-            
             chatBox.insertBefore(msgDiv, typingIndicator);
             scrollToBottom();
         }
@@ -276,23 +293,23 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         }
 
-        // 서울 지역별 키워드에 따른 맞춤형 가짜 답변 생성
+        // 가짜 AI 응답 데이터
         function getMockAiResponse(userText) {
             if (userText.includes('성수')) {
-                return "성수동이군요! 성수는 힙하고 개성 있는 스트릿 캐주얼이 찰떡이에요. 빈티지한 워싱 데님에 오버핏 레더 자켓이나 나일론 아우터를 걸치고, 볼드한 헤드폰이나 키링으로 포인트를 주면 성수 팝업스토어 룩 완성입니다. 🎧🖤";
-            } else if (userText.includes('한남') || userText.includes('이태원')) {
-                return "한남동 특유의 여유롭고 고급스러운 무드에는 '미니멀룩'이나 '올드머니룩'을 추천해요. 로고가 없는 깔끔한 니트나 가디건에 핏이 좋은 슬랙스, 그리고 로퍼를 매치해 보세요. 색상은 차분한 뉴트럴 톤이 분위기 있어 보입니다. ☕🤎";
-            } else if (userText.includes('홍대') || userText.includes('연남')) {
-                return "홍대와 연남동은 자유롭고 트렌디한 바이브죠! Y2K 무드의 크롭 탑이나 나일론 카고 팬츠, 그리고 청키한 스니커즈 조합을 추천해요. 비니나 실버 악세사리를 더하면 눈길을 끄는 룩이 될 거예요. 🛹🔥";
-            } else if (userText.includes('압구정') || userText.includes('강남') || userText.includes('청담')) {
-                return "압구정/청담 라인이라면 세련되고 시크한 룩이 어울려요. 핏이 딱 떨어지는 트위드 자켓이나 미니멀한 셋업 수트에 스틸레토 힐이나 깔끔한 첼시 부츠를 매치해 보세요. 전체적인 실루엣을 깔끔하게 가져가는 것이 포인트입니다. 🥂✨";
+                return "<b>[📍 성수동 바이브]</b><br>힙하고 개성 있는 스트릿 캐주얼이 찰떡이에요. 빈티지한 워싱 데님에 오버핏 레더 자켓이나 나일론 아우터를 걸치고, 볼드한 헤드폰이나 키링으로 포인트를 주면 성수 팝업스토어 룩 완성입니다. 🎧🖤";
+            } else if (userText.includes('한남')) {
+                return "<b>[📍 한남동 바이브]</b><br>여유롭고 고급스러운 '미니멀룩'이나 '올드머니룩'을 추천해요. 로고가 없는 깔끔한 니트나 가디건에 핏이 좋은 슬랙스, 그리고 로퍼를 매치해 보세요. 색상은 차분한 뉴트럴 톤이 좋습니다. ☕🤎";
+            } else if (userText.includes('홍대')) {
+                return "<b>[📍 홍대 바이브]</b><br>자유롭고 트렌디하게! Y2K 무드의 크롭 탑이나 나일론 카고 팬츠, 그리고 청키한 스니커즈 조합을 추천해요. 비니나 실버 악세사리를 더하면 눈길을 끄는 룩이 될 거예요. 🛹🔥";
+            } else if (userText.includes('압구정') || userText.includes('청담')) {
+                return "<b>[📍 압구정 바이브]</b><br>세련되고 시크한 룩이 어울려요. 핏이 딱 떨어지는 트위드 자켓이나 미니멀한 셋업 수트에 스틸레토 힐이나 깔끔한 첼시 부츠를 매치해 보세요. 실루엣을 깔끔하게 가져가는 것이 포인트입니다. 🥂✨";
             } else {
-                return "좋습니다! 가시는 동네 이름(예: 성수, 홍대, 한남, 압구정 등)을 함께 알려주시면, 그 동네의 분위기에 맞춰서 더욱 찰떡같은 스타일링을 추천해 드릴게요! 🗺️👗";
+                return "지도에서 파란색 마커를 클릭하시거나, 가시는 동네 이름(성수, 홍대, 한남, 압구정 등)을 입력해 주시면 맞춤 코디를 알려드릴게요! 🗺️👗";
             }
         }
 
-        function handleSend() {
-            const text = userInput.value.trim();
+        // 메시지 처리 및 애니메이션 함수
+        function processUserMessage(text) {
             if (!text) return;
 
             addMessage(text, 'user');
@@ -301,15 +318,17 @@
             typingIndicator.style.display = 'flex';
             scrollToBottom();
 
+            // 1.2초 후 AI 답변 출력
             setTimeout(() => {
                 typingIndicator.style.display = 'none';
                 addMessage(getMockAiResponse(text), 'ai');
             }, 1200);
         }
 
-        sendBtn.addEventListener('click', handleSend);
+        // 버튼 클릭 / 엔터키 이벤트 연결
+        sendBtn.addEventListener('click', () => processUserMessage(userInput.value.trim()));
         userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') handleSend();
+            if (e.key === 'Enter') processUserMessage(userInput.value.trim());
         });
     </script>
 </body>
