@@ -162,18 +162,23 @@
             }, 1500);
         });
 
+        // 💡 1. 모바일 환경 감지
+        const isMobile = window.innerWidth <= 768;
+
         // 경기도 수준까지만 볼 수 있도록 이동/축소 제한
         const gyeonggiBounds = L.latLngBounds(
             [36.8, 126.5], 
             [38.3, 127.9]  
         );
 
+        // 💡 2. 지도 초기 설정 변경 (모바일일 때 minZoom을 10.5로 낮추고, 줌 컨트롤 숨김)
         const map = L.map('map', { 
             zoomSnap: 0.2, 
             wheelPxPerZoomLevel: 150,
             maxBounds: gyeonggiBounds,      
             maxBoundsViscosity: 1.0,        
-            minZoom: 12.0                    
+            minZoom: isMobile ? 10.5 : 12.0,
+            zoomControl: !isMobile
         });
 
         L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { 
@@ -269,9 +274,13 @@
             marker.on('click', onClickAction);
         });
 
-        // 초기 지도 밀착
+        // 💡 3. 초기 지도 밀착 변경 (모바일일 때 여백을 확 줄임)
         const bounds = L.latLngBounds(latlngs);
-        map.fitBounds(bounds, { padding: [300, 300] });
+        if (isMobile) {
+            map.fitBounds(bounds, { padding: [20, 20] });
+        } else {
+            map.fitBounds(bounds, { padding: [300, 300] });
+        }
 
         // --- 챗봇 로직 ---
         const chatBox = document.getElementById('chatBox');
