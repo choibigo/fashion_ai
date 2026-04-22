@@ -34,14 +34,12 @@
             overflow: hidden;
         }
 
-        /* 전체 레이아웃: 좌측 지도, 우측 채팅 (PC 기준) */
         .app-wrapper {
             display: flex;
             width: 100%;
             height: 100%;
         }
 
-        /* --- 지도 영역 --- */
         .map-section {
             flex: 1;
             position: relative;
@@ -53,24 +51,33 @@
             z-index: 1;
         }
 
-        /* 💡 무료 지도를 다크모드처럼 보이게 만드는 CSS 마법 */
-        .leaflet-layer,
-        .leaflet-control-zoom-in,
-        .leaflet-control-zoom-out,
-        .leaflet-control-attribution {
-            filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+        /* 이름표(툴팁) 디자인 */
+        .custom-map-label {
+            background-color: rgba(0, 0, 0, 0.75) !important;
+            color: #ffffff !important;
+            border: 1px solid rgba(255,255,255,0.2) !important;
+            border-radius: 20px !important;
+            padding: 4px 12px !important;
+            font-family: 'Noto Sans KR', sans-serif !important;
+            font-weight: bold !important;
+            font-size: 0.85rem !important;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
+            backdrop-filter: blur(5px);
         }
 
-        /* --- 챗봇 영역 --- */
+        .leaflet-tooltip-top:before {
+            border-top-color: rgba(0, 0, 0, 0.75) !important;
+        }
+
         .chat-section {
-            width: 400px;
+            width: 500px; 
             background: rgba(26, 26, 36, 0.95);
             backdrop-filter: blur(20px);
             display: flex;
             flex-direction: column;
             border-left: 1px solid rgba(255, 255, 255, 0.08);
             z-index: 2;
-            box-shadow: -10px 0 30px rgba(0,0,0,0.5);
+            box-shadow: -10px 0 30px rgba(0,0,0,0.2);
         }
 
         header {
@@ -99,6 +106,7 @@
             display: flex;
             flex-direction: column;
             gap: 15px;
+            scroll-behavior: smooth;
         }
 
         .chat-box::-webkit-scrollbar { width: 4px; }
@@ -132,6 +140,46 @@
             color: var(--user-msg-text);
             align-self: flex-end;
             border-bottom-right-radius: 4px;
+        }
+
+        .action-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 8px 16px;
+            background-color: transparent;
+            border: 1px solid var(--accent);
+            color: var(--accent);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background-color: var(--accent);
+            color: #fff;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #666;
+            color: #666;
+        }
+
+        .chat-image {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            cursor: zoom-in;
+            border: 1px solid rgba(255,255,255,0.1);
+            transition: transform 0.2s;
+        }
+
+        .chat-image:hover {
+            transform: scale(1.02);
+            border-color: rgba(255,255,255,0.3);
         }
 
         .input-area {
@@ -171,7 +219,6 @@
 
         .input-area button:hover { transform: scale(1.05); }
 
-        /* 타이핑 인디케이터 */
         .typing-indicator {
             display: flex;
             gap: 5px;
@@ -199,7 +246,53 @@
             40% { transform: scale(1); }
         }
 
-        /* 모바일 반응형 (화면이 작아지면 지도를 위로, 채팅을 아래로 배치) */
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .image-modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover { color: var(--accent); }
+
         @media (max-width: 768px) {
             .app-wrapper { flex-direction: column; }
             .map-section { height: 40vh; flex: none; }
@@ -217,12 +310,12 @@
         <div class="chat-section">
             <header>
                 <h1>Seoul Vibe</h1>
-                <p>지도에서 동네를 클릭하거나 입력해보세요</p>
+                <p>지도에서 동네 이름표를 클릭하거나 입력해보세요</p>
             </header>
 
             <main class="chat-box" id="chatBox">
                 <div class="message ai-message">
-                    안녕하세요! 🗺️<br>왼쪽 지도에서 가고 싶은 동네의 <b>파란색 마커</b>를 클릭해보세요. 그 동네 분위기에 딱 맞는 코디를 즉시 추천해 드릴게요!
+                    안녕하세요! 🗺️<br>왼쪽 지도에서 가고 싶은 동네의 <b>이름표</b>를 클릭해보세요. 그 동네 분위기에 딱 맞는 코디를 즉시 추천해 드릴게요!
                 </div>
                 
                 <div class="typing-indicator" id="typingIndicator">
@@ -233,41 +326,60 @@
             </main>
 
             <div class="input-area">
-                <input type="text" id="userInput" placeholder="예: 한남동 데이트 룩 알려줘" autocomplete="off">
+                <input type="text" id="userInput" placeholder="예: 신용산 용리단길 갈 건데 추천해줘" autocomplete="off">
                 <button id="sendBtn"><i class="fas fa-arrow-up"></i></button>
             </div>
         </div>
+    </div>
+
+    <div id="imageModal" class="image-modal">
+        <span class="close-modal">&times;</span>
+        <img class="modal-content" id="expandedImg">
     </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
         // --- 1. 지도 초기화 및 설정 ---
-        // 서울 중심 좌표로 지도 띄우기 (위도, 경도, 줌 레벨)
-        const map = L.map('map').setView([37.541, 126.986], 12);
+        // 망원, 합정 등이 보이도록 지도의 중심을 살짝 왼쪽(서쪽)으로 조정했습니다.
+        const map = L.map('map').setView([37.545, 126.975], 12);
 
-        // 오픈스트리트맵 타일 불러오기
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        // CartoDB Voyager 밝고 예쁜 지도
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
             maxZoom: 19,
-            attribution: '© OpenStreetMap'
+            attribution: '© OpenStreetMap contributors, © CARTO'
         }).addTo(map);
 
-        // 서울 주요 지역 마커 데이터 (위도, 경도, 이름, 챗봇에 보낼 질문)
+        // 지역 리스트 (망원, 합정, 상수 추가)
         const locations = [
             { lat: 37.5445, lng: 127.0560, name: "성수동", query: "성수동 팝업스토어 갈 건데 코디 추천해줘" },
             { lat: 37.5367, lng: 127.0000, name: "한남동", query: "한남동 예쁜 카페 갈 때 입을 옷 추천해줘" },
             { lat: 37.5563, lng: 126.9227, name: "홍대", query: "홍대 길거리 돌아다닐 때 입을 힙한 룩 알려줘" },
-            { lat: 37.5270, lng: 127.0360, name: "압구정", query: "압구정 로데오 라운지 바에 갈 건데 뭐 입지?" }
+            { lat: 37.5270, lng: 127.0360, name: "압구정", query: "압구정 로데오 라운지 바에 갈 건데 뭐 입지?" },
+            { lat: 37.5250, lng: 127.0473, name: "청담", query: "청담 고급 파인다이닝 갈 건데 우아한 룩 추천해줘" },
+            { lat: 37.5340, lng: 126.9940, name: "이태원", query: "이태원 펍에 놀러 갈 건데 핫한 코디 추천해줘" },
+            { lat: 37.5271, lng: 126.9328, name: "여의도 한강", query: "여의도 한강공원 피크닉 갈 건데 편한 옷 알려줘" },
+            { lat: 37.5826, lng: 126.9831, name: "북촌", query: "북촌 한옥마을 갈 건데 단아한 룩 추천해줘" },
+            { lat: 37.5280, lng: 126.9675, name: "신용산", query: "신용산 용리단길 핫플 갈 건데 트렌디하게 입고 싶어" },
+            { lat: 37.5555, lng: 126.9040, name: "망원", query: "망원동 소품샵 투어 갈 건데 귀여운 룩 추천해줘" },
+            { lat: 37.5490, lng: 126.9130, name: "합정", query: "합정역 근처 조용한 카페 갈 건데 감성적인 코디 알려줘" },
+            { lat: 37.5470, lng: 126.9220, name: "상수", query: "상수동 골목길 데이트 할 건데 유니크한 스타일 추천해줘" }
         ];
 
-        // 지도에 마커 찍고, 클릭 이벤트 연결하기
+        // 지도에 마커 및 이름표 찍기
         locations.forEach(loc => {
             const marker = L.marker([loc.lat, loc.lng]).addTo(map);
-            marker.bindPopup(`<b>${loc.name}</b><br>클릭해서 코디 추천받기`);
             
-            // 마커 클릭 시 챗봇에 메시지 전송!
+            // 💡 이름표 중앙 정렬 완벽 수정! 
+            // Leaflet 기본 마커의 앵커(기준점)가 살짝 치우친 것을 계산하여 X축으로 -16px 이동시켰습니다.
+            marker.bindTooltip(loc.name, {
+                permanent: true,       
+                direction: 'top',      
+                offset: [-16, 0],      
+                className: 'custom-map-label' 
+            });
+            
             marker.on('click', function() {
-                // 모바일 환경을 위해 채팅창으로 스크롤(포커스)
                 if(window.innerWidth <= 768) {
                     document.getElementById('userInput').focus();
                 }
@@ -281,36 +393,81 @@
         const sendBtn = document.getElementById('sendBtn');
         const typingIndicator = document.getElementById('typingIndicator');
 
-        function addMessage(text, sender) {
+        const fashionPhotos = [
+            "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1434389670869-c87520c2794c?w=600&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1529139574466-a303027c1d8b?w=600&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1539008835657-9e8e9680c956?w=600&auto=format&fit=crop&q=80",
+            "https://images.unsplash.com/photo-1520975954732-57dd22299614?w=600&auto=format&fit=crop&q=80"
+        ];
+        let photoIndex = 0;
+
+        function getNextPhoto() {
+            const photo = fashionPhotos[photoIndex % fashionPhotos.length];
+            photoIndex++;
+            return photo;
+        }
+
+        function addMessage(htmlContent, sender) {
             const msgDiv = document.createElement('div');
             msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
-            msgDiv.innerHTML = text; 
+            msgDiv.innerHTML = htmlContent; 
             chatBox.insertBefore(msgDiv, typingIndicator);
             scrollToBottom();
         }
 
         function scrollToBottom() {
-            chatBox.scrollTop = chatBox.scrollHeight;
+            setTimeout(() => {
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }, 50);
         }
 
-        // 가짜 AI 응답 데이터
         function getMockAiResponse(userText) {
+            let text = "";
+            let locationMatched = true;
+
             if (userText.includes('성수')) {
-                return "<b>[📍 성수동 바이브]</b><br>힙하고 개성 있는 스트릿 캐주얼이 찰떡이에요. 빈티지한 워싱 데님에 오버핏 레더 자켓이나 나일론 아우터를 걸치고, 볼드한 헤드폰이나 키링으로 포인트를 주면 성수 팝업스토어 룩 완성입니다. 🎧🖤";
+                text = "<b>[📍 성수동 바이브]</b><br>힙하고 개성 있는 스트릿 캐주얼이 찰떡이에요. 빈티지한 워싱 데님에 오버핏 레더 자켓이나 나일론 아우터를 걸치고, 볼드한 헤드폰으로 포인트를 주면 성수 팝업 룩 완성입니다. 🎧🖤";
             } else if (userText.includes('한남')) {
-                return "<b>[📍 한남동 바이브]</b><br>여유롭고 고급스러운 '미니멀룩'이나 '올드머니룩'을 추천해요. 로고가 없는 깔끔한 니트나 가디건에 핏이 좋은 슬랙스, 그리고 로퍼를 매치해 보세요. 색상은 차분한 뉴트럴 톤이 좋습니다. ☕🤎";
+                text = "<b>[📍 한남동 바이브]</b><br>여유롭고 고급스러운 '미니멀룩'이나 '올드머니룩'을 추천해요. 로고 없는 깔끔한 니트나 가디건에 핏이 좋은 슬랙스, 그리고 로퍼를 매치해 보세요. ☕🤎";
             } else if (userText.includes('홍대')) {
-                return "<b>[📍 홍대 바이브]</b><br>자유롭고 트렌디하게! Y2K 무드의 크롭 탑이나 나일론 카고 팬츠, 그리고 청키한 스니커즈 조합을 추천해요. 비니나 실버 악세사리를 더하면 눈길을 끄는 룩이 될 거예요. 🛹🔥";
-            } else if (userText.includes('압구정') || userText.includes('청담')) {
-                return "<b>[📍 압구정 바이브]</b><br>세련되고 시크한 룩이 어울려요. 핏이 딱 떨어지는 트위드 자켓이나 미니멀한 셋업 수트에 스틸레토 힐이나 깔끔한 첼시 부츠를 매치해 보세요. 실루엣을 깔끔하게 가져가는 것이 포인트입니다. 🥂✨";
+                text = "<b>[📍 홍대 바이브]</b><br>자유롭고 트렌디하게! Y2K 무드의 크롭 탑이나 나일론 카고 팬츠, 그리고 청키한 스니커즈 조합을 추천해요. 비니나 실버 악세사리를 더해보세요. 🛹🔥";
+            } else if (userText.includes('압구정')) {
+                text = "<b>[📍 압구정 바이브]</b><br>세련되고 시크한 룩이 어울려요. 핏이 딱 떨어지는 자켓이나 미니멀한 셋업 수트에 깔끔한 부츠를 매치해 보세요. 실루엣을 깔끔하게 가져가는 것이 핵심입니다. 🥂✨";
+            } else if (userText.includes('청담')) {
+                text = "<b>[📍 청담 바이브]</b><br>격식 있고 우아한 하이엔드 룩을 추천합니다. 고급스러운 소재의 실크 블라우스나 트위드 자켓, 우아한 원피스에 스틸레토 힐을 매치하여 럭셔리한 무드를 연출해 보세요. 💎🍷";
+            } else if (userText.includes('이태원')) {
+                text = "<b>[📍 이태원 바이브]</b><br>자유롭고 과감한 스타일링을 시도해 보세요! 레더 팬츠나 컷아웃 디테일이 있는 탑, 화려한 패턴의 셔츠로 포인트를 주면 완벽합니다. 🪩🍸";
+            } else if (userText.includes('여의도') || userText.includes('한강')) {
+                text = "<b>[📍 여의도 한강공원 바이브]</b><br>활동하기 편안하면서도 사진이 잘 나오는 캐주얼 피크닉 룩을 추천해요. 산뜻한 컬러의 셔츠에 와이드 데님, 그리고 캡모자를 더해보세요! 🧺🚲";
+            } else if (userText.includes('북촌') || userText.includes('한옥')) {
+                text = "<b>[📍 북촌 바이브]</b><br>고즈넉한 한옥과 어울리는 차분하고 단아한 룩이 좋아요. 뉴트럴 톤의 린넨 셔츠나 롱 플리츠 스커트, 모던 생활 한복 아이템을 믹스매치 해보는 건 어떨까요? 🍵🍂";
+            } else if (userText.includes('신용산') || userText.includes('용리단길')) {
+                text = "<b>[📍 신용산(용리단길) 바이브]</b><br>요즘 가장 핫한 감성! 모던하면서도 트렌디한 스트릿 캐주얼이 좋습니다. 크롭 기장의 블루종이나 바시티 자켓에 와이드 슬랙스를 매치하고, 뿔테 안경으로 포인트를 줘보세요. 📸☕";
+            } else if (userText.includes('망원')) {
+                text = "<b>[📍 망원동 바이브]</b><br>아기자기하고 빈티지한 망원동에는 편안하면서도 귀여운 캐주얼룩이 제격이에요. 파스텔 톤의 카디건에 코튼 팬츠를 매치하고, 에코백이나 크로스백으로 소품들을 담을 여유를 준비해 보세요! 🥨🌷";
+            } else if (userText.includes('합정')) {
+                text = "<b>[📍 합정 바이브]</b><br>여유롭고 모던한 합정의 분위기에는 깔끔하고 감성적인 룩을 추천해요. 무채색 톤의 셔츠나 블라우스에 와이드 슬랙스, 그리고 로퍼나 블로퍼를 매치하여 꾸안꾸 매력을 살려보세요. ☕📖";
+            } else if (userText.includes('상수')) {
+                text = "<b>[📍 상수동 바이브]</b><br>숨겨진 맛집과 아티스틱한 골목이 많은 상수! 빈티지 그래픽 티셔츠나 그런지한 워싱 데님에, 청키한 부츠나 독특한 악세사리로 개성을 뽐내며 유니크한 스트릿 감성을 연출해 보세요. 🎸🎨";
             } else {
-                return "지도에서 파란색 마커를 클릭하시거나, 가시는 동네 이름(성수, 홍대, 한남, 압구정 등)을 입력해 주시면 맞춤 코디를 알려드릴게요! 🗺️👗";
+                text = "지도에서 이름표를 클릭하시거나, 가시는 동네 이름(성수, 용산, 망원, 상수 등)을 입력해 주시면 맞춤 코디를 알려드릴게요! 🗺️👗";
+                locationMatched = false;
             }
+
+            if (locationMatched) {
+                text += `<br><button class="action-btn" data-action="request-photo">사진으로 추천받으실래요? 📸</button>`;
+            }
+
+            return text;
         }
 
-        // 메시지 처리 및 애니메이션 함수
         function processUserMessage(text) {
             if (!text) return;
+
+            // 새로운 질문이 입력(또는 장소 클릭)되면 기존 채팅창의 모든 버튼을 삭제
+            const oldButtons = document.querySelectorAll('.action-btn');
+            oldButtons.forEach(btn => btn.remove());
 
             addMessage(text, 'user');
             userInput.value = '';
@@ -318,18 +475,66 @@
             typingIndicator.style.display = 'flex';
             scrollToBottom();
 
-            // 1.2초 후 AI 답변 출력
             setTimeout(() => {
                 typingIndicator.style.display = 'none';
                 addMessage(getMockAiResponse(text), 'ai');
-            }, 1200);
+            }, 1000);
         }
 
-        // 버튼 클릭 / 엔터키 이벤트 연결
+        // --- 3. 이벤트 리스너 (버튼 클릭 & 모달 제어) ---
+        chatBox.addEventListener('click', (e) => {
+            if (e.target.classList.contains('action-btn')) {
+                const btn = e.target;
+                btn.disabled = true; 
+                btn.innerText = "사진 생성 중... ⏳";
+
+                typingIndicator.style.display = 'flex';
+                scrollToBottom();
+
+                setTimeout(() => {
+                    typingIndicator.style.display = 'none';
+                    btn.style.display = 'none'; 
+
+                    const photoUrl = getNextPhoto();
+                    const imgResponse = `
+                        <img src="${photoUrl}" class="chat-image" alt="추천 코디 이미지" onload="this.parentNode.parentNode.scrollTop = this.parentNode.parentNode.scrollHeight;">
+                        이런 스타일은 어떠신가요? 👗✨<br>
+                        <button class="action-btn" data-action="more-photo">다른 사진 추가 생성 🔄</button>
+                    `;
+                    addMessage(imgResponse, 'ai');
+                }, 1500);
+            }
+            
+            if (e.target.tagName === 'IMG' && e.target.classList.contains('chat-image')) {
+                openModal(e.target.src);
+            }
+        });
+
         sendBtn.addEventListener('click', () => processUserMessage(userInput.value.trim()));
         userInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') processUserMessage(userInput.value.trim());
         });
+
+        // --- 4. 이미지 모달(크게 보기) 로직 ---
+        const modal = document.getElementById('imageModal');
+        const modalImg = document.getElementById('expandedImg');
+        const closeModalBtn = document.querySelector('.close-modal');
+
+        function openModal(imgSrc) {
+            modalImg.src = imgSrc;
+            modal.classList.add('show');
+        }
+
+        function closeModal() {
+            modal.classList.remove('show');
+            setTimeout(() => { modalImg.src = ''; }, 300); 
+        }
+
+        closeModalBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal(); 
+        });
+
     </script>
 </body>
 </html>
