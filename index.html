@@ -21,98 +21,26 @@
             --accent: #ff4757;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Noto Sans KR', sans-serif;
-            background-color: var(--bg-color);
-            color: #fff;
-            display: flex;
-            height: 100vh;
-            overflow: hidden;
-            margin: 0;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Noto Sans KR', sans-serif; background-color: var(--bg-color); color: #fff; display: flex; height: 100vh; overflow: hidden; margin: 0; }
 
         /* --- 트렌디한 로딩 화면 --- */
         #loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: var(--bg-color);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-            transition: opacity 0.6s ease;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background-color: var(--bg-color);
+            display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 10000; transition: opacity 0.6s ease;
         }
+        .loading-icon { font-size: 4rem; margin-bottom: 10px; animation: float 2s ease-in-out infinite; }
+        .loading-logo { font-family: 'Outfit', sans-serif; font-size: 2.5rem; color: var(--accent); letter-spacing: 2px; margin-bottom: 20px; }
+        .loading-text { display: flex; align-items: center; gap: 12px; font-size: 1.1rem; color: #ccc; font-weight: 300; }
+        .spinner { width: 20px; height: 20px; border: 3px solid rgba(255, 71, 87, 0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; }
+        @keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
 
-        .loading-icon {
-            font-size: 4rem;
-            margin-bottom: 10px;
-            animation: float 2s ease-in-out infinite;
-        }
+        .app-wrapper { display: flex; width: 100%; height: 100%; }
+        .map-section { flex: 1; position: relative; background-color: #e5e3df; /* 바다 등 빈 공간 배경색 보정 */ }
+        #map { width: 100%; height: 100%; z-index: 1; }
 
-        .loading-logo {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2.5rem;
-            color: var(--accent);
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-        }
-
-        .loading-text {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-size: 1.1rem;
-            color: #ccc;
-            font-weight: 300;
-        }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 71, 87, 0.2);
-            border-top-color: var(--accent);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-10px); }
-        }
-
-        @keyframes spin {
-            100% { transform: rotate(360deg); }
-        }
-        /* ----------------------- */
-
-        .app-wrapper {
-            display: flex;
-            width: 100%;
-            height: 100%;
-        }
-
-        .map-section {
-            flex: 1;
-            position: relative;
-        }
-
-        #map {
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        /* 이름표(툴팁) 디자인 */
+        /* --- 이름표(툴팁) 기본 디자인 --- */
         .custom-map-label {
             background-color: rgba(0, 0, 0, 0.8) !important;
             color: #ffffff !important;
@@ -124,241 +52,71 @@
             font-size: 0.85rem !important;
             box-shadow: 0 4px 10px rgba(0,0,0,0.3) !important;
             backdrop-filter: blur(5px);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important; 
+            margin-top: 0px; 
+            cursor: pointer !important; /* 글씨 위에서도 손가락 모양으로 변경 */
         }
 
         .leaflet-tooltip-top:before {
             border-top-color: rgba(0, 0, 0, 0.8) !important;
+            transition: border-top-color 0.3s !important;
         }
 
+        /* 💡 Hover 애니메이션 클래스 */
+        .hovered-tooltip, .custom-map-label:hover {
+            background-color: var(--accent) !important;
+            border-color: #ffffff !important;
+            color: #ffffff !important;
+            margin-top: -8px !important; 
+            box-shadow: 0 10px 20px rgba(255, 71, 87, 0.4) !important;
+            z-index: 1000 !important;
+        }
+
+        .hovered-tooltip:before, .custom-map-label:hover:before {
+            border-top-color: var(--accent) !important; 
+        }
+
+        /* --- 챗봇 영역 --- */
         .chat-section {
-            width: 500px; 
-            background: rgba(26, 26, 36, 0.95);
-            backdrop-filter: blur(20px);
-            display: flex;
-            flex-direction: column;
-            border-left: 1px solid rgba(255, 255, 255, 0.08);
-            z-index: 2;
-            box-shadow: -10px 0 30px rgba(0,0,0,0.2);
+            width: 500px; background: rgba(26, 26, 36, 0.95); backdrop-filter: blur(20px);
+            display: flex; flex-direction: column; border-left: 1px solid rgba(255, 255, 255, 0.08);
+            z-index: 2; box-shadow: -10px 0 30px rgba(0,0,0,0.2);
         }
-
-        header {
-            padding: 20px;
-            text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        header h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 1.6rem;
-            color: var(--accent);
-            letter-spacing: 1px;
-        }
-
-        header p {
-            font-size: 0.85rem;
-            color: #aaa;
-            margin-top: 5px;
-        }
-
-        .chat-box {
-            flex: 1;
-            padding: 20px;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            scroll-behavior: smooth;
-        }
-
+        header { padding: 20px; text-align: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        header h1 { font-family: 'Outfit', sans-serif; font-size: 1.6rem; color: var(--accent); letter-spacing: 1px; }
+        header p { font-size: 0.85rem; color: #aaa; margin-top: 5px; }
+        .chat-box { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; scroll-behavior: smooth; }
         .chat-box::-webkit-scrollbar { width: 4px; }
         .chat-box::-webkit-scrollbar-thumb { background: #444; border-radius: 4px; }
-
-        .message {
-            max-width: 85%;
-            padding: 14px 18px;
-            border-radius: 20px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-            animation: fadeIn 0.3s ease-out forwards;
-            opacity: 0;
-            transform: translateY(10px);
-            word-break: keep-all;
-        }
-
-        @keyframes fadeIn {
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .ai-message {
-            background-color: var(--ai-msg);
-            color: var(--ai-msg-text);
-            align-self: flex-start;
-            border-bottom-left-radius: 4px;
-        }
-
-        .user-message {
-            background-color: var(--user-msg);
-            color: var(--user-msg-text);
-            align-self: flex-end;
-            border-bottom-right-radius: 4px;
-        }
-
-        .action-btn {
-            display: inline-block;
-            margin-top: 12px;
-            padding: 8px 16px;
-            background-color: transparent;
-            border: 1px solid var(--accent);
-            color: var(--accent);
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.2s;
-            font-family: inherit;
-        }
-
-        .action-btn:hover:not(:disabled) {
-            background-color: var(--accent);
-            color: #fff;
-        }
-
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            border-color: #666;
-            color: #666;
-        }
-
-        .chat-image {
-            width: 100%;
-            border-radius: 10px;
-            margin-bottom: 10px;
-            cursor: zoom-in;
-            border: 1px solid rgba(255,255,255,0.1);
-            transition: transform 0.2s;
-        }
-
-        .chat-image:hover {
-            transform: scale(1.02);
-            border-color: rgba(255,255,255,0.3);
-        }
-
-        .input-area {
-            padding: 20px;
-            background: var(--chat-bg);
-            display: flex;
-            gap: 10px;
-            border-top: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .input-area input {
-            flex: 1;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: #fff;
-            padding: 14px 18px;
-            border-radius: 30px;
-            font-size: 0.95rem;
-            outline: none;
-        }
-
-        .input-area input:focus {
-            border-color: var(--accent);
-        }
-
-        .input-area button {
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            width: 48px;
-            height: 48px;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: transform 0.2s;
-        }
-
+        .message { max-width: 85%; padding: 14px 18px; border-radius: 20px; font-size: 0.95rem; line-height: 1.5; animation: fadeIn 0.3s ease-out forwards; opacity: 0; transform: translateY(10px); word-break: keep-all; }
+        @keyframes fadeIn { to { opacity: 1; transform: translateY(0); } }
+        .ai-message { background-color: var(--ai-msg); color: var(--ai-msg-text); align-self: flex-start; border-bottom-left-radius: 4px; }
+        .user-message { background-color: var(--user-msg); color: var(--user-msg-text); align-self: flex-end; border-bottom-right-radius: 4px; }
+        .action-btn { display: inline-block; margin-top: 12px; padding: 8px 16px; background-color: transparent; border: 1px solid var(--accent); color: var(--accent); border-radius: 20px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; font-family: inherit; }
+        .action-btn:hover:not(:disabled) { background-color: var(--accent); color: #fff; }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; border-color: #666; color: #666; }
+        .chat-image { width: 100%; border-radius: 10px; margin-bottom: 10px; cursor: zoom-in; border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s; }
+        .chat-image:hover { transform: scale(1.02); border-color: rgba(255,255,255,0.3); }
+        
+        .input-area { padding: 20px; background: var(--chat-bg); display: flex; gap: 10px; border-top: 1px solid rgba(255, 255, 255, 0.05); }
+        .input-area input { flex: 1; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); color: #fff; padding: 14px 18px; border-radius: 30px; font-size: 0.95rem; outline: none; }
+        .input-area input:focus { border-color: var(--accent); }
+        .input-area button { background: var(--accent); color: #fff; border: none; width: 48px; height: 48px; border-radius: 50%; cursor: pointer; font-size: 1.2rem; transition: transform 0.2s; }
         .input-area button:hover { transform: scale(1.05); }
 
-        .typing-indicator {
-            display: flex;
-            gap: 5px;
-            padding: 15px;
-            background-color: var(--ai-msg);
-            border-radius: 20px;
-            border-bottom-left-radius: 4px;
-            align-self: flex-start;
-            display: none;
-        }
+        .typing-indicator { display: flex; gap: 5px; padding: 15px; background-color: var(--ai-msg); border-radius: 20px; border-bottom-left-radius: 4px; align-self: flex-start; display: none; }
+        .dot { width: 6px; height: 6px; background-color: #888; border-radius: 50%; animation: bounce 1.4s infinite ease-in-out both; }
+        .dot:nth-child(1) { animation-delay: -0.32s; } .dot:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce { 0%, 80%, 100% { transform: scale(0); } 40% { transform: scale(1); } }
 
-        .dot {
-            width: 6px;
-            height: 6px;
-            background-color: #888;
-            border-radius: 50%;
-            animation: bounce 1.4s infinite ease-in-out both;
-        }
-
-        .dot:nth-child(1) { animation-delay: -0.32s; }
-        .dot:nth-child(2) { animation-delay: -0.16s; }
-
-        @keyframes bounce {
-            0%, 80%, 100% { transform: scale(0); }
-            40% { transform: scale(1); }
-        }
-
-        .image-modal {
-            display: none;
-            position: fixed;
-            z-index: 9999;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.85);
-            backdrop-filter: blur(5px);
-            justify-content: center;
-            align-items: center;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-
-        .image-modal.show {
-            display: flex;
-            opacity: 1;
-        }
-
-        .modal-content {
-            max-width: 90vw;
-            max-height: 90vh;
-            border-radius: 8px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            transform: scale(0.9);
-            transition: transform 0.3s ease;
-        }
-
-        .image-modal.show .modal-content {
-            transform: scale(1);
-        }
-
-        .close-modal {
-            position: absolute;
-            top: 20px;
-            right: 30px;
-            color: white;
-            font-size: 40px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-
+        .image-modal { display: none; position: fixed; z-index: 9999; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px); justify-content: center; align-items: center; opacity: 0; transition: opacity 0.3s ease; }
+        .image-modal.show { display: flex; opacity: 1; }
+        .modal-content { max-width: 90vw; max-height: 90vh; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transform: scale(0.9); transition: transform 0.3s ease; }
+        .image-modal.show .modal-content { transform: scale(1); }
+        .close-modal { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; transition: color 0.2s; }
         .close-modal:hover { color: var(--accent); }
 
-        @media (max-width: 768px) {
-            .app-wrapper { flex-direction: column; }
-            .map-section { height: 40vh; flex: none; }
-            .chat-section { width: 100%; height: 60vh; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 10;}
-        }
+        @media (max-width: 768px) { .app-wrapper { flex-direction: column; } .map-section { height: 40vh; flex: none; } .chat-section { width: 100%; height: 60vh; border-left: none; border-top: 1px solid rgba(255, 255, 255, 0.1); box-shadow: 0 -10px 30px rgba(0,0,0,0.5); z-index: 10;} }
     </style>
 </head>
 <body>
@@ -373,28 +131,15 @@
     </div>
 
     <div class="app-wrapper">
-        <div class="map-section">
-            <div id="map"></div>
-        </div>
-
+        <div class="map-section"><div id="map"></div></div>
         <div class="chat-section">
             <header>
-                <h1>Seoul Vibe</h1>
-                <p>지도에서 동네 이름표를 클릭하거나 입력해보세요</p>
+                <h1>Seoul Vibe</h1><p>지도에서 동네 이름표를 클릭하거나 입력해보세요</p>
             </header>
-
             <main class="chat-box" id="chatBox">
-                <div class="message ai-message">
-                    안녕하세요! 🗺️<br>왼쪽 지도에서 가고 싶은 동네의 <b>이름표</b>를 클릭해보세요. 그 동네 분위기에 딱 맞는 코디를 즉시 추천해 드릴게요!
-                </div>
-                
-                <div class="typing-indicator" id="typingIndicator">
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                    <div class="dot"></div>
-                </div>
+                <div class="message ai-message">안녕하세요! 🗺️<br>왼쪽 지도에서 가고 싶은 동네의 <b>이름표</b>를 클릭해보세요. 그 동네 분위기에 딱 맞는 코디를 즉시 추천해 드릴게요!</div>
+                <div class="typing-indicator" id="typingIndicator"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
             </main>
-
             <div class="input-area">
                 <input type="text" id="userInput" placeholder="예: 힙지로 갈 건데 옷 추천해줘" autocomplete="off">
                 <button id="sendBtn"><i class="fas fa-arrow-up"></i></button>
@@ -402,73 +147,133 @@
         </div>
     </div>
 
-    <div id="imageModal" class="image-modal">
-        <span class="close-modal">&times;</span>
-        <img class="modal-content" id="expandedImg">
-    </div>
+    <div id="imageModal" class="image-modal"><span class="close-modal">&times;</span><img class="modal-content" id="expandedImg"></div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    
     <script>
-        // --- 0. 로딩 화면 제거 로직 ---
         window.addEventListener('load', () => {
-            // 앱이 로드된 후 트렌디한 느낌을 주기 위해 1.5초 정도 대기
             setTimeout(() => {
                 document.getElementById('loading-msg').innerText = "코디 북 로드 완료!";
                 setTimeout(() => {
                     const loader = document.getElementById('loading-screen');
                     loader.style.opacity = '0';
-                    setTimeout(() => { loader.style.display = 'none'; }, 600); // fade out 완료 후 DOM 숨김
+                    setTimeout(() => { loader.style.display = 'none'; }, 600); 
                 }, 500);
             }, 1500);
         });
 
-        // --- 1. 지도 초기화 및 설정 ---
-        const map = L.map('map').setView([37.545, 126.975], 12);
+        // 경기도 수준까지만 볼 수 있도록 이동/축소 제한
+        const gyeonggiBounds = L.latLngBounds(
+            [36.8, 126.5], 
+            [38.3, 127.9]  
+        );
 
-        // CartoDB Voyager 밝고 예쁜 지도
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-            maxZoom: 19,
-            attribution: '© OpenStreetMap contributors, © CARTO'
+        const map = L.map('map', { 
+            zoomSnap: 0.2, 
+            wheelPxPerZoomLevel: 150,
+            maxBounds: gyeonggiBounds,      
+            maxBoundsViscosity: 1.0,        
+            minZoom: 12.0                    
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', { 
+            maxZoom: 19, 
+            attribution: '© CARTO' 
         }).addTo(map);
 
-        // 지역 리스트 (을지로 추가됨)
+        // 서울을 제외한 영역 회색으로 덮기
+        fetch('https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2013/json/skorea_provinces_geo_simple.json')
+        .then(res => res.json())
+        .then(data => {
+            L.geoJson(data, {
+                style: function(feature) {
+                    if (feature.properties.name_eng === 'Seoul' || feature.properties.name === '서울특별시') {
+                        return {
+                            color: "#ff4757", 
+                            weight: 4,        
+                            opacity: 0.8,
+                            fillOpacity: 0.03, 
+                            fillColor: "#ff4757"
+                        };
+                    } else {
+                        return {
+                            color: "#b0b0b0",   
+                            weight: 1,
+                            opacity: 0.5,
+                            fillColor: "#808080", 
+                            fillOpacity: 0.6      
+                        };
+                    }
+                }
+            }).addTo(map);
+        });
+
         const locations = [
-            { lat: 37.5445, lng: 127.0560, name: "성수동", query: "성수동 팝업스토어 갈 건데 코디 추천해줘" },
-            { lat: 37.5367, lng: 127.0000, name: "한남동", query: "한남동 예쁜 카페 갈 때 입을 옷 추천해줘" },
-            { lat: 37.5563, lng: 126.9227, name: "홍대", query: "홍대 길거리 돌아다닐 때 입을 힙한 룩 알려줘" },
-            { lat: 37.5270, lng: 127.0360, name: "압구정", query: "압구정 로데오 라운지 바에 갈 건데 뭐 입지?" },
-            { lat: 37.5250, lng: 127.0473, name: "청담", query: "청담 고급 파인다이닝 갈 건데 우아한 룩 추천해줘" },
-            { lat: 37.5340, lng: 126.9940, name: "이태원", query: "이태원 펍에 놀러 갈 건데 핫한 코디 추천해줘" },
-            { lat: 37.5271, lng: 126.9328, name: "여의도 한강", query: "여의도 한강공원 피크닉 갈 건데 편한 옷 알려줘" },
-            { lat: 37.5826, lng: 126.9831, name: "북촌", query: "북촌 한옥마을 갈 건데 단아한 룩 추천해줘" },
-            { lat: 37.5280, lng: 126.9675, name: "신용산", query: "신용산 용리단길 핫플 갈 건데 트렌디하게 입고 싶어" },
-            { lat: 37.5555, lng: 126.9040, name: "망원", query: "망원동 소품샵 투어 갈 건데 귀여운 룩 추천해줘" },
-            { lat: 37.5490, lng: 126.9130, name: "합정", query: "합정역 근처 조용한 카페 갈 건데 감성적인 코디 알려줘" },
-            { lat: 37.5470, lng: 126.9220, name: "상수", query: "상수동 골목길 데이트 할 건데 유니크한 스타일 추천해줘" },
-            { lat: 37.5663, lng: 126.9912, name: "을지로", query: "을지로 힙지로 갈 건데 레트로한 코디 추천해줘" } // 을지로 추가
+            { lat: 37.5445, lng: 127.0560, name: "성수동", query: "성수동 팝업스토어 코디 추천해줘" },
+            { lat: 37.5367, lng: 127.0000, name: "한남동", query: "한남동 예쁜 카페 코디 추천해줘" },
+            { lat: 37.5563, lng: 126.9227, name: "홍대", query: "홍대 힙한 룩 알려줘" },
+            { lat: 37.5270, lng: 127.0360, name: "압구정", query: "압구정 라운지 바 뭐 입지?" },
+            { lat: 37.5250, lng: 127.0473, name: "청담", query: "청담 우아한 룩 추천해줘" },
+            { lat: 37.5340, lng: 126.9940, name: "이태원", query: "이태원 펍 핫한 코디 추천해줘" },
+            { lat: 37.5271, lng: 126.9328, name: "여의도", query: "여의도 한강공원 편한 옷 알려줘" },
+            { lat: 37.5826, lng: 126.9831, name: "북촌", query: "북촌 한옥마을 단아한 룩 추천해줘" },
+            { lat: 37.5280, lng: 126.9675, name: "신용산", query: "신용산 용리단길 트렌디하게 입고 싶어" },
+            { lat: 37.5555, lng: 126.9040, name: "망원", query: "망원동 소품샵 귀여운 룩 추천해줘" },
+            { lat: 37.5490, lng: 126.9130, name: "합정", query: "합정 감성적인 코디 알려줘" },
+            { lat: 37.5470, lng: 126.9220, name: "상수", query: "상수동 유니크한 스타일 추천해줘" },
+            { lat: 37.5663, lng: 126.9912, name: "을지로", query: "힙지로 레트로한 코디 추천해줘" }
         ];
 
-        // 지도에 마커 및 이름표 찍기
+        const latlngs = [];
+        let lastClickTime = 0; // 💡 중복 클릭(더블파이어링) 방지를 위한 전역 변수
+
         locations.forEach(loc => {
             const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+            latlngs.push([loc.lat, loc.lng]); 
             
             marker.bindTooltip(loc.name, {
                 permanent: true,       
                 direction: 'top',      
                 offset: [-16, 0],      
-                className: 'custom-map-label' 
+                className: 'custom-map-label',
+                interactive: true 
             });
             
-            marker.on('click', function() {
-                if(window.innerWidth <= 768) {
-                    document.getElementById('userInput').focus();
-                }
+            const onClickAction = function(e) {
+                // 💡 더블클릭이나 이벤트 버블링으로 인한 중복 실행 차단 (0.3초 쿨타임)
+                const now = Date.now();
+                if (now - lastClickTime < 300) return;
+                lastClickTime = now;
+
+                if(window.innerWidth <= 768) { document.getElementById('userInput').focus(); }
                 processUserMessage(loc.query);
-            });
+            };
+
+            const onHoverIn = function() {
+                const tooltip = marker.getTooltip();
+                if (tooltip && tooltip.getElement()) {
+                    tooltip.getElement().classList.add('hovered-tooltip'); 
+                }
+            };
+
+            const onHoverOut = function() {
+                const tooltip = marker.getTooltip();
+                if (tooltip && tooltip.getElement()) {
+                    tooltip.getElement().classList.remove('hovered-tooltip');
+                }
+            };
+
+            // 이벤트 연결 (툴팁에 묶인 이벤트가 마커로 전달되므로 마커에만 연결하면 충분함)
+            marker.on('mouseover', onHoverIn);
+            marker.on('mouseout', onHoverOut);
+            marker.on('click', onClickAction);
         });
 
-        // --- 2. 챗봇 로직 ---
+        // 초기 지도 밀착
+        const bounds = L.latLngBounds(latlngs);
+        map.fitBounds(bounds, { padding: [300, 300] });
+
+        // --- 챗봇 로직 ---
         const chatBox = document.getElementById('chatBox');
         const userInput = document.getElementById('userInput');
         const sendBtn = document.getElementById('sendBtn');
@@ -483,11 +288,7 @@
         ];
         let photoIndex = 0;
 
-        function getNextPhoto() {
-            const photo = fashionPhotos[photoIndex % fashionPhotos.length];
-            photoIndex++;
-            return photo;
-        }
+        function getNextPhoto() { return fashionPhotos[photoIndex++ % fashionPhotos.length]; }
 
         function addMessage(htmlContent, sender) {
             const msgDiv = document.createElement('div');
@@ -497,66 +298,35 @@
             scrollToBottom();
         }
 
-        function scrollToBottom() {
-            setTimeout(() => {
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }, 50);
-        }
+        function scrollToBottom() { setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 50); }
 
         function getMockAiResponse(userText) {
-            let text = "";
-            let locationMatched = true;
+            let text = ""; let locationMatched = true;
 
-            if (userText.includes('성수')) {
-                text = "<b>[📍 성수동 바이브]</b><br>힙하고 개성 있는 스트릿 캐주얼이 찰떡이에요. 빈티지한 워싱 데님에 오버핏 레더 자켓이나 나일론 아우터를 걸치고, 볼드한 헤드폰으로 포인트를 주면 성수 팝업 룩 완성입니다. 🎧🖤";
-            } else if (userText.includes('한남')) {
-                text = "<b>[📍 한남동 바이브]</b><br>여유롭고 고급스러운 '미니멀룩'이나 '올드머니룩'을 추천해요. 로고 없는 깔끔한 니트나 가디건에 핏이 좋은 슬랙스, 그리고 로퍼를 매치해 보세요. ☕🤎";
-            } else if (userText.includes('홍대')) {
-                text = "<b>[📍 홍대 바이브]</b><br>자유롭고 트렌디하게! Y2K 무드의 크롭 탑이나 나일론 카고 팬츠, 그리고 청키한 스니커즈 조합을 추천해요. 비니나 실버 악세사리를 더해보세요. 🛹🔥";
-            } else if (userText.includes('압구정')) {
-                text = "<b>[📍 압구정 바이브]</b><br>세련되고 시크한 룩이 어울려요. 핏이 딱 떨어지는 자켓이나 미니멀한 셋업 수트에 깔끔한 부츠를 매치해 보세요. 실루엣을 깔끔하게 가져가는 것이 핵심입니다. 🥂✨";
-            } else if (userText.includes('청담')) {
-                text = "<b>[📍 청담 바이브]</b><br>격식 있고 우아한 하이엔드 룩을 추천합니다. 고급스러운 소재의 실크 블라우스나 트위드 자켓, 우아한 원피스에 스틸레토 힐을 매치하여 럭셔리한 무드를 연출해 보세요. 💎🍷";
-            } else if (userText.includes('이태원')) {
-                text = "<b>[📍 이태원 바이브]</b><br>자유롭고 과감한 스타일링을 시도해 보세요! 레더 팬츠나 컷아웃 디테일이 있는 탑, 화려한 패턴의 셔츠로 포인트를 주면 완벽합니다. 🪩🍸";
-            } else if (userText.includes('여의도') || userText.includes('한강')) {
-                text = "<b>[📍 여의도 한강공원 바이브]</b><br>활동하기 편안하면서도 사진이 잘 나오는 캐주얼 피크닉 룩을 추천해요. 산뜻한 컬러의 셔츠에 와이드 데님, 그리고 캡모자를 더해보세요! 🧺🚲";
-            } else if (userText.includes('북촌') || userText.includes('한옥')) {
-                text = "<b>[📍 북촌 바이브]</b><br>고즈넉한 한옥과 어울리는 차분하고 단아한 룩이 좋아요. 뉴트럴 톤의 린넨 셔츠나 롱 플리츠 스커트, 모던 생활 한복 아이템을 믹스매치 해보는 건 어떨까요? 🍵🍂";
-            } else if (userText.includes('신용산') || userText.includes('용리단길')) {
-                text = "<b>[📍 신용산(용리단길) 바이브]</b><br>요즘 가장 핫한 감성! 모던하면서도 트렌디한 스트릿 캐주얼이 좋습니다. 크롭 기장의 블루종이나 바시티 자켓에 와이드 슬랙스를 매치하고, 뿔테 안경으로 포인트를 줘보세요. 📸☕";
-            } else if (userText.includes('망원')) {
-                text = "<b>[📍 망원동 바이브]</b><br>아기자기하고 빈티지한 망원동에는 편안하면서도 귀여운 캐주얼룩이 제격이에요. 파스텔 톤의 카디건에 코튼 팬츠를 매치하고, 에코백이나 크로스백으로 소품들을 담을 여유를 준비해 보세요! 🥨🌷";
-            } else if (userText.includes('합정')) {
-                text = "<b>[📍 합정 바이브]</b><br>여유롭고 모던한 합정의 분위기에는 깔끔하고 감성적인 룩을 추천해요. 무채색 톤의 셔츠나 블라우스에 와이드 슬랙스, 그리고 로퍼나 블로퍼를 매치하여 꾸안꾸 매력을 살려보세요. ☕📖";
-            } else if (userText.includes('상수')) {
-                text = "<b>[📍 상수동 바이브]</b><br>숨겨진 맛집과 아티스틱한 골목이 많은 상수! 빈티지 그래픽 티셔츠나 그런지한 워싱 데님에, 청키한 부츠나 독특한 악세사리로 개성을 뽐내며 유니크한 스트릿 감성을 연출해 보세요. 🎸🎨";
-            } else if (userText.includes('을지로') || userText.includes('힙지로')) {
-                text = "<b>[📍 을지로(힙지로) 바이브]</b><br>낡은 인쇄소 골목 사이 숨겨진 힙지로 감성! 클래식과 빈티지가 섞인 '아메카지 룩'이나, 빛바랜 색감의 레더 자켓, 코듀로이 셔츠 등을 활용한 레트로 캐주얼 룩을 추천합니다. 뉴스보이 캡으로 포인트를 주면 완벽해요. 📻🍻";
-            } else {
-                text = "지도에서 이름표를 클릭하시거나, 가시는 동네 이름(성수, 용산, 힙지로 등)을 입력해 주시면 맞춤 코디를 알려드릴게요! 🗺️👗";
-                locationMatched = false;
-            }
+            if (userText.includes('성수')) { text = "<b>[📍 성수동 바이브]</b><br>힙하고 개성 있는 스트릿 캐주얼이 찰떡이에요. 빈티지한 워싱 데님에 오버핏 레더 자켓이나 나일론 아우터를 걸치고, 볼드한 헤드폰으로 포인트를 주면 성수 팝업 룩 완성입니다. 🎧🖤"; }
+            else if (userText.includes('한남')) { text = "<b>[📍 한남동 바이브]</b><br>여유롭고 고급스러운 '미니멀룩'이나 '올드머니룩'을 추천해요. 로고 없는 깔끔한 니트나 가디건에 핏이 좋은 슬랙스, 그리고 로퍼를 매치해 보세요. ☕🤎"; }
+            else if (userText.includes('홍대')) { text = "<b>[📍 홍대 바이브]</b><br>자유롭고 트렌디하게! Y2K 무드의 크롭 탑이나 나일론 카고 팬츠, 그리고 청키한 스니커즈 조합을 추천해요. 비니나 실버 악세사리를 더해보세요. 🛹🔥"; }
+            else if (userText.includes('압구정')) { text = "<b>[📍 압구정 바이브]</b><br>세련되고 시크한 룩이 어울려요. 핏이 딱 떨어지는 자켓이나 미니멀한 셋업 수트에 깔끔한 부츠를 매치해 보세요. 실루엣을 깔끔하게 가져가는 것이 핵심입니다. 🥂✨"; }
+            else if (userText.includes('청담')) { text = "<b>[📍 청담 바이브]</b><br>격식 있고 우아한 하이엔드 룩을 추천합니다. 고급스러운 소재의 실크 블라우스나 트위드 자켓, 우아한 원피스에 스틸레토 힐을 매치하여 럭셔리한 무드를 연출해 보세요. 💎🍷"; }
+            else if (userText.includes('이태원')) { text = "<b>[📍 이태원 바이브]</b><br>자유롭고 과감한 스타일링을 시도해 보세요! 레더 팬츠나 컷아웃 디테일이 있는 탑, 화려한 패턴의 셔츠로 포인트를 주면 완벽합니다. 🪩🍸"; }
+            else if (userText.includes('여의도') || userText.includes('한강')) { text = "<b>[📍 여의도 한강공원 바이브]</b><br>활동하기 편안하면서도 사진이 잘 나오는 캐주얼 피크닉 룩을 추천해요. 산뜻한 컬러의 셔츠에 와이드 데님, 그리고 캡모자를 더해보세요! 🧺🚲"; }
+            else if (userText.includes('북촌') || userText.includes('한옥')) { text = "<b>[📍 북촌 바이브]</b><br>고즈넉한 한옥과 어울리는 차분하고 단아한 룩이 좋아요. 뉴트럴 톤의 린넨 셔츠나 롱 플리츠 스커트, 모던 생활 한복 아이템을 믹스매치 해보는 건 어떨까요? 🍵🍂"; }
+            else if (userText.includes('신용산') || userText.includes('용리단길')) { text = "<b>[📍 신용산(용리단길) 바이브]</b><br>요즘 가장 핫한 감성! 모던하면서도 트렌디한 스트릿 캐주얼이 좋습니다. 크롭 기장의 블루종이나 바시티 자켓에 와이드 슬랙스를 매치하고, 뿔테 안경으로 포인트를 줘보세요. 📸☕"; }
+            else if (userText.includes('망원')) { text = "<b>[📍 망원동 바이브]</b><br>아기자기하고 빈티지한 망원동에는 편안하면서도 귀여운 캐주얼룩이 제격이에요. 파스텔 톤의 카디건에 코튼 팬츠를 매치하고, 에코백이나 크로스백으로 소품들을 담을 여유를 준비해 보세요! 🥨🌷"; }
+            else if (userText.includes('합정')) { text = "<b>[📍 합정 바이브]</b><br>여유롭고 모던한 합정의 분위기에는 깔끔하고 감성적인 룩을 추천해요. 무채색 톤의 셔츠나 블라우스에 와이드 슬랙스, 그리고 로퍼나 블로퍼를 매치하여 꾸안꾸 매력을 살려보세요. ☕📖"; }
+            else if (userText.includes('상수')) { text = "<b>[📍 상수동 바이브]</b><br>숨겨진 맛집과 아티스틱한 골목이 많은 상수! 빈티지 그래픽 티셔츠나 그런지한 워싱 데님에, 청키한 부츠나 독특한 악세사리로 개성을 뽐내며 유니크한 스트릿 감성을 연출해 보세요. 🎸🎨"; }
+            else if (userText.includes('을지로') || userText.includes('힙지로')) { text = "<b>[📍 을지로(힙지로) 바이브]</b><br>낡은 인쇄소 골목 사이 숨겨진 힙지로 감성! 클래식과 빈티지가 섞인 '아메카지 룩'이나, 빛바랜 색감의 레더 자켓, 코듀로이 셔츠 등을 활용한 레트로 캐주얼 룩을 추천합니다. 뉴스보이 캡으로 포인트를 주면 완벽해요. 📻🍻"; }
+            else { text = "지도에서 이름표를 클릭하시거나, 가시는 동네 이름(성수, 용산, 힙지로 등)을 입력해 주시면 맞춤 코디를 알려드릴게요! 🗺️👗"; locationMatched = false; }
 
-            if (locationMatched) {
-                text += `<br><button class="action-btn" data-action="request-photo">사진으로 추천받으실래요? 📸</button>`;
-            }
-
+            if (locationMatched) { text += `<br><button class="action-btn" data-action="request-photo">사진으로 추천받으실래요? 📸</button>`; }
             return text;
         }
 
         function processUserMessage(text) {
             if (!text) return;
-
-            // 새로운 질문이 입력(또는 장소 클릭)되면 기존 채팅창의 모든 버튼을 삭제
-            const oldButtons = document.querySelectorAll('.action-btn');
-            oldButtons.forEach(btn => btn.remove());
-
-            addMessage(text, 'user');
-            userInput.value = '';
-
-            typingIndicator.style.display = 'flex';
-            scrollToBottom();
+            document.querySelectorAll('.action-btn').forEach(btn => btn.remove());
+            addMessage(text, 'user'); userInput.value = '';
+            typingIndicator.style.display = 'flex'; scrollToBottom();
 
             setTimeout(() => {
                 typingIndicator.style.display = 'none';
@@ -564,59 +334,35 @@
             }, 1000);
         }
 
-        // --- 3. 이벤트 리스너 (버튼 클릭 & 모달 제어) ---
         chatBox.addEventListener('click', (e) => {
             if (e.target.classList.contains('action-btn')) {
-                const btn = e.target;
-                btn.disabled = true; 
-                btn.innerText = "사진 생성 중... ⏳";
-
-                typingIndicator.style.display = 'flex';
-                scrollToBottom();
+                const btn = e.target; btn.disabled = true; btn.innerText = "사진 생성 중... ⏳";
+                typingIndicator.style.display = 'flex'; scrollToBottom();
 
                 setTimeout(() => {
-                    typingIndicator.style.display = 'none';
-                    btn.style.display = 'none'; 
-
-                    const photoUrl = getNextPhoto();
+                    typingIndicator.style.display = 'none'; btn.style.display = 'none'; 
                     const imgResponse = `
-                        <img src="${photoUrl}" class="chat-image" alt="추천 코디 이미지" onload="this.parentNode.parentNode.scrollTop = this.parentNode.parentNode.scrollHeight;">
-                        이런 스타일은 어떠신가요? 👗✨<br>
-                        <button class="action-btn" data-action="more-photo">다른 사진 추가 생성 🔄</button>
+                        <img src="${getNextPhoto()}" class="chat-image" alt="추천 코디 이미지" onload="this.parentNode.parentNode.scrollTop = this.parentNode.parentNode.scrollHeight;">
+                        이런 스타일은 어떠신가요? 👗✨<br><button class="action-btn" data-action="more-photo">다른 사진 추가 생성 🔄</button>
                     `;
                     addMessage(imgResponse, 'ai');
                 }, 1500);
             }
-            
-            if (e.target.tagName === 'IMG' && e.target.classList.contains('chat-image')) {
-                openModal(e.target.src);
-            }
+            if (e.target.tagName === 'IMG' && e.target.classList.contains('chat-image')) { openModal(e.target.src); }
         });
 
         sendBtn.addEventListener('click', () => processUserMessage(userInput.value.trim()));
-        userInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') processUserMessage(userInput.value.trim());
-        });
+        userInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') processUserMessage(userInput.value.trim()); });
 
-        // --- 4. 이미지 모달(크게 보기) 로직 ---
         const modal = document.getElementById('imageModal');
         const modalImg = document.getElementById('expandedImg');
         const closeModalBtn = document.querySelector('.close-modal');
 
-        function openModal(imgSrc) {
-            modalImg.src = imgSrc;
-            modal.classList.add('show');
-        }
-
-        function closeModal() {
-            modal.classList.remove('show');
-            setTimeout(() => { modalImg.src = ''; }, 300); 
-        }
+        function openModal(imgSrc) { modalImg.src = imgSrc; modal.classList.add('show'); }
+        function closeModal() { modal.classList.remove('show'); setTimeout(() => { modalImg.src = ''; }, 300); }
 
         closeModalBtn.addEventListener('click', closeModal);
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) closeModal(); 
-        });
+        modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
 
     </script>
 </body>
