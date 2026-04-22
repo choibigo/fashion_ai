@@ -1,1 +1,276 @@
-Fashion Ai Web Page
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StyleBot - AI 패션 큐레이터</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700&family=Playfair+Display:ital,wght@1,600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --bg-color: #121212;
+            --chat-bg: #1e1e24;
+            --user-msg: #ffffff;
+            --user-msg-text: #000000;
+            --ai-msg: #2a2a35;
+            --ai-msg-text: #e0e0e0;
+            --accent: #d4af37; /* 고급스러운 골드 포인트 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-image: radial-gradient(circle at 50% 0%, #2a2a35 0%, #121212 70%);
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 450px;
+            height: 90vh;
+            background: rgba(30, 30, 36, 0.6);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 24px;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5);
+        }
+
+        /* 헤더 디자인 */
+        header {
+            padding: 20px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            background: rgba(30, 30, 36, 0.8);
+        }
+
+        header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--accent);
+            letter-spacing: 1px;
+        }
+
+        header p {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 5px;
+        }
+
+        /* 채팅 영역 */
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        /* 스크롤바 숨기기 (깔끔한 UI) */
+        .chat-box::-webkit-scrollbar { width: 0; }
+
+        .message {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.5;
+            animation: fadeIn 0.3s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes fadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ai-message {
+            background-color: var(--ai-msg);
+            color: var(--ai-msg-text);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message {
+            background-color: var(--user-msg);
+            color: var(--user-msg-text);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        /* 입력 영역 */
+        .input-area {
+            padding: 15px 20px;
+            background: rgba(30, 30, 36, 0.9);
+            border-top: 1px solid rgba(255, 255, 255, 0.05);
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-area input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: #fff;
+            padding: 12px 15px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .input-area input:focus {
+            border-color: var(--accent);
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .input-area button {
+            background: var(--accent);
+            color: #000;
+            border: none;
+            width: 45px;
+            height: 45px;
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 1.1rem;
+            transition: transform 0.2s ease;
+        }
+
+        .input-area button:hover {
+            transform: scale(1.05);
+        }
+
+        /* 타이핑 인디케이터 */
+        .typing-indicator {
+            display: flex;
+            gap: 5px;
+            padding: 15px;
+            background-color: var(--ai-msg);
+            border-radius: 20px;
+            border-bottom-left-radius: 4px;
+            align-self: flex-start;
+            display: none;
+        }
+
+        .dot {
+            width: 6px;
+            height: 6px;
+            background-color: #888;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) { animation-delay: -0.32s; }
+        .dot:nth-child(2) { animation-delay: -0.16s; }
+
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="chat-container">
+        <header>
+            <h1>StyleBot AI</h1>
+            <p>당신만의 퍼스널 스타일리스트</p>
+        </header>
+
+        <main class="chat-box" id="chatBox">
+            <div class="message ai-message">
+                안녕하세요! 🖤<br>오늘 어떤 스타일이 고민이신가요? 날씨, 체형, 가고자 하는 장소(예: 성수동 데이트, 결혼식 하객)를 편하게 말씀해 주세요.
+            </div>
+            
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </main>
+
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="예: 오늘 비 오는데 코트 입어도 될까?" autocomplete="off">
+            <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chatBox');
+        const userInput = document.getElementById('userInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const typingIndicator = document.getElementById('typingIndicator');
+
+        // 메시지 화면에 추가하는 함수
+        function addMessage(text, sender) {
+            const msgDiv = document.createElement('div');
+            msgDiv.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+            msgDiv.innerHTML = text; // HTML 태그(br 등) 적용을 위해 innerHTML 사용
+            
+            // 타이핑 인디케이터 위에 메시지 추가
+            chatBox.insertBefore(msgDiv, typingIndicator);
+            scrollToBottom();
+        }
+
+        // 스크롤 맨 아래로 내리기
+        function scrollToBottom() {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // 임시 AI 응답 (나중에 실제 AI API와 연동해야 하는 부분)
+        function getMockAiResponse(userText) {
+            const responses = [
+                "그럴 때는 오버핏 블랙 블레이저에 와이드 데님 팬츠를 매치하면 꾸안꾸 느낌으로 아주 멋스러워요. 포인트로 실버 악세사리는 어떨까요? ✨",
+                "좋은 선택이네요! 거기에 청키한 스니커즈나 더비 슈즈를 신어주면 비율이 훨씬 좋아 보일 거예요. 👟",
+                "색상 매치가 고민이시라면, 톤온톤(같은 색상의 톤 차이)으로 입어보세요. 실패 확률이 가장 적고 고급스러워 보인답니다. 🧥"
+            ];
+            // 랜덤으로 답변 하나 선택
+            return responses[Math.floor(Math.random() * responses.length)];
+        }
+
+        // 전송 버튼 클릭 이벤트
+        function handleSend() {
+            const text = userInput.value.trim();
+            if (!text) return;
+
+            // 1. 사용자 메시지 화면에 표시
+            addMessage(text, 'user');
+            userInput.value = '';
+
+            // 2. AI 타이핑 효과 보여주기
+            typingIndicator.style.display = 'flex';
+            scrollToBottom();
+
+            // 3. 1.5초 뒤에 가짜 AI 답변 달기 (실제로는 여기서 API 통신을 해야 함)
+            setTimeout(() => {
+                typingIndicator.style.display = 'none';
+                addMessage(getMockAiResponse(text), 'ai');
+            }, 1500);
+        }
+
+        // 버튼 클릭 및 엔터키 입력 처리
+        sendBtn.addEventListener('click', handleSend);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSend();
+        });
+    </script>
+</body>
+</html>
