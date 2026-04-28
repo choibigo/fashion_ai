@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seoul Mouse to Country Mouse</title>
+    <link rel="icon"
+          href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧀</text></svg>">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Outfit:wght@400;700&display=swap"
+          rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+    <style>
+        :root {
+            --bg-color: #fffdf2;
+            --chat-bg: #ffffff;
+            --user-msg: #ffb703;
+            --user-msg-text: #451a03;
+            --ai-msg: #fef08a;
+            --ai-msg-text: #451a03;
+            --accent: #fb8500;
+            --border-color: #fde047;
+            --text-main: #333333;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: var(--bg-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            transition: opacity 0.6s ease;
+        }
+
+        .loading-icon {
+            font-size: 5rem;
+            margin-bottom: 10px;
+            animation: bounce 1.5s ease-in-out infinite;
+        }
+
+        .loading-logo {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.2rem;
+            color: var(--accent);
+            font-weight: 900;
+            letter-spacing: 1px;
+            margin-bottom: 20px;
+        }
+
+        .loading-text {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 1.1rem;
+            color: var(--user-msg-text);
+            font-weight: 700;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 4px solid var(--border-color);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .app-wrapper {
+            display: flex;
+            width: 100%;
+            height: 100%;
+        }
+
+        .map-section {
+            flex: 1;
+            position: relative;
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        .custom-map-label {
+            background-color: var(--user-msg) !important;
+            color: #ffffff !important;
+            border: 2px solid #ffffff !important;
+            border-radius: 20px !important;
+            padding: 6px 14px !important;
+            font-family: 'Noto Sans KR', sans-serif !important;
+            font-weight: 900 !important;
+            font-size: 0.9rem !important;
+            box-shadow: 0 4px 12px rgba(251, 133, 0, 0.3) !important;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+            cursor: pointer !important;
+        }
+
+        .leaflet-tooltip-top:before {
+            border-top-color: var(--user-msg) !important;
+        }
+
+        .hovered-tooltip {
+            background-color: var(--accent) !important;
+            margin-top: -8px !important;
+            box-shadow: 0 10px 20px rgba(251, 133, 0, 0.5) !important;
+            transform: scale(1.05);
+            z-index: 1000 !important;
+        }
+
+        .hovered-tooltip:before {
+            border-top-color: var(--accent) !important;
+        }
+
+        .chat-section {
+            width: 450px;
+            background: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            border-left: 1px solid var(--border-color);
+            z-index: 2;
+            box-shadow: -5px 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        header {
+            padding: 25px 20px 15px;
+            text-align: center;
+            border-bottom: 2px dashed var(--border-color);
+            background: var(--chat-bg);
+        }
+
+        header h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 1.8rem;
+            color: var(--accent);
+            font-weight: 900;
+        }
+
+        header p {
+            font-size: 0.9rem;
+            color: #888;
+            margin-top: 5px;
+            font-weight: 700;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 15px;
+            background: var(--bg-color);
+            padding: 8px 15px;
+            border-radius: 30px;
+            border: 1px solid var(--border-color);
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .toggle-label {
+            font-size: 0.9rem;
+            font-weight: 900;
+            color: var(--text-main);
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 26px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #8bb1e5;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        input:checked + .slider {
+            background-color: #ff9fb4;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(22px);
+        }
+
+        .server-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            background: #f3f4f6;
+            color: #888;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .server-status.connected {
+            background: #dcfce7;
+            color: #166534;
+            border-color: #86efac;
+        }
+
+        .server-status.error {
+            background: #fee2e2;
+            color: #991b1b;
+            border-color: #fca5a5;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: currentColor;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            scroll-behavior: smooth;
+            background-color: var(--bg-color);
+        }
+
+        .chat-box::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .chat-box::-webkit-scrollbar-thumb {
+            background: #fde047;
+            border-radius: 6px;
+        }
+
+        .message {
+            max-width: 85%;
+            padding: 14px 18px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            font-weight: 700;
+            animation: fadeIn 0.3s ease-out forwards;
+            opacity: 0;
+            transform: translateY(10px);
+            word-break: keep-all;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .ai-message {
+            background-color: var(--ai-msg);
+            color: var(--ai-msg-text);
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+
+        .user-message {
+            background-color: var(--user-msg);
+            color: var(--user-msg-text);
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+
+        .action-btn {
+            display: inline-block;
+            margin-top: 12px;
+            padding: 10px 18px;
+            background-color: #ffffff;
+            border: 2px solid var(--accent);
+            color: var(--accent);
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 700;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover:not(:disabled) {
+            background-color: var(--accent);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            border-color: #ccc;
+            color: #888;
+            transform: none;
+        }
+
+        .chat-image {
+            width: 100%;
+            border-radius: 12px;
+            margin-bottom: 10px;
+            cursor: zoom-in;
+            border: 2px solid var(--border-color);
+            transition: transform 0.2s;
+        }
+
+        .chat-image:hover {
+            transform: scale(1.02);
+            border-color: var(--accent);
+        }
+
+        .input-area {
+            padding: 20px;
+            background: var(--chat-bg);
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .input-area input {
+            flex: 1;
+            background: #f9f9f9;
+            border: 2px solid var(--border-color);
+            color: var(--text-main);
+            padding: 14px 18px;
+            border-radius: 30px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            outline: none;
+            transition: border 0.3s;
+        }
+
+        .input-area input:focus {
+            border-color: var(--accent);
+            background: #fff;
+        }
+
+        .input-area input::placeholder {
+            color: #aaa;
+            font-weight: 400;
+        }
+
+        .input-area button {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 10px rgba(251, 133, 0, 0.3);
+        }
+
+        .input-area button:hover {
+            transform: scale(1.1);
+        }
+
+        .typing-indicator {
+            display: none;
+            gap: 5px;
+            padding: 15px 20px;
+            background-color: var(--ai-msg);
+            border-radius: 20px;
+            border-bottom-left-radius: 4px;
+            align-self: flex-start;
+        }
+
+        .dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent);
+            border-radius: 50%;
+            animation: bounceDots 1.4s infinite ease-in-out both;
+        }
+
+        .dot:nth-child(1) {
+            animation-delay: -0.32s;
+        }
+
+        .dot:nth-child(2) {
+            animation-delay: -0.16s;
+        }
+
+        @keyframes bounceDots {
+            0%, 80%, 100% {
+                transform: scale(0);
+            }
+            40% {
+                transform: scale(1);
+            }
+        }
+
+        .image-modal {
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .image-modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        .modal-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            border-radius: 12px;
+            border: 4px solid var(--user-msg);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+            transform: scale(0.9);
+            transition: transform 0.3s ease;
+        }
+
+        .image-modal.show .modal-content {
+            transform: scale(1);
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: var(--accent);
+            font-size: 45px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .app-wrapper {
+                flex-direction: column;
+            }
+
+            .map-section {
+                height: 40vh;
+                flex: none;
+            }
+
+            .chat-section {
+                width: 100%;
+                height: 60vh;
+                border-left: none;
+                border-top: 2px dashed var(--border-color);
+            }
+        }
+    </style>
+</head>
+<body>
+
+<div id="loading-screen">
+    <div class="loading-icon">🐭🧀</div>
+    <div class="loading-logo">Seoul Mouse's Guide</div>
+    <div class="loading-text">
+        <div class="spinner"></div>
+        <span id="loading-msg">서울쥐가 시골쥐를 위한 비밀 노트 펴는 중... 💛</span>
+    </div>
+</div>
+
+<div class="app-wrapper">
+    <div class="map-section">
+        <div id="map"></div>
+    </div>
+    <div class="chat-section">
+        <header>
+            <h1>Seoul Mouse's Guide 🧀</h1>
+            <p>시골쥐야, 서울은 내가 다 알지! 물어봐 🐭</p>
+            <div class="toggle-container">
+                <span class="toggle-label">👦 남자</span>
+                <label class="switch"><input type="checkbox" id="genderToggle"><span class="slider"></span></label>
+                <span class="toggle-label">👧 여자</span>
+            </div>
+            <div class="server-status" id="serverStatus">
+                <span class="status-dot"></span>
+                <span id="serverStatusText">서버 확인 중...</span>
+            </div>
+        </header>
+        <main class="chat-box" id="chatBox">
+            <div class="message ai-message">
+                안녕, 시골쥐야! 🐭🧀<br>
+                서울 나들이를 준비 중이구나? 왼쪽 지도에서 가고 싶은 동네의 <b>이름표</b>를 누르거나, 아래에 어디 갈지 입력해봐! 이 힙한 서울쥐가 그 동네에 딱 맞는 옷차림을 알려줄게. 찍찍!
+                ✨
+            </div>
+            <div class="typing-indicator" id="typingIndicator">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </main>
+        <div class="input-area">
+            <input type="text" id="userInput" placeholder="예: 시골쥐 내일 홍대 가는데 뭐 입지?" autocomplete="off">
+            <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+        </div>
+    </div>
+</div>
+
+<div id="imageModal" class="image-modal">
+    <span class="close-modal">&times;</span>
+    <img class="modal-content" id="expandedImg">
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // ── 설정 ──────────────────────────────────────────────────
+    const API_BASE = "http://127.0.0.1:5001";
+
+    const LOCATION_KEYWORDS = [
+        "성수", "한남", "홍대", "압구정", "청담", "이태원",
+        "여의도", "한강", "북촌", "한옥", "신용산", "용리단",
+        "망원", "합정", "상수", "을지로", "힙지로"
+    ];
+
+    // ── 로딩 ──────────────────────────────────────────────────
+    window.addEventListener('load', () => {
+        setTimeout(() => {
+            document.getElementById('loading-msg').innerText = "치즈 충전 완료! 찍찍! 🧀";
+            setTimeout(() => {
+                const loader = document.getElementById('loading-screen');
+                loader.style.opacity = '0';
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                }, 600);
+            }, 500);
+        }, 1500);
+    });
+
+    // ── 서버 상태 확인 ────────────────────────────────────────
+    async function checkServerHealth() {
+        const badge = document.getElementById('serverStatus');
+        const label = document.getElementById('serverStatusText');
+        try {
+            const res = await fetch(`${API_BASE}/health`, {signal: AbortSignal.timeout(3000)});
+            if (res.ok) {
+                badge.className = 'server-status connected';
+                label.textContent = '서울쥐 서버 연결됨 ✅';
+            } else throw new Error();
+        } catch {
+            badge.className = 'server-status error';
+            label.textContent = '서버 연결 안 됨 ❌';
+        }
+    }
+
+    checkServerHealth();
+
+    // ── 지도 ──────────────────────────────────────────────────
+    const isMobile = window.innerWidth <= 768;
+    const map = L.map('map', {
+        zoomSnap: 0.2, wheelPxPerZoomLevel: 150,
+        maxBounds: L.latLngBounds([36.8, 126.5], [38.3, 127.9]),
+        maxBoundsViscosity: 1.0,
+        minZoom: isMobile ? 10.5 : 12.0,
+        zoomControl: !isMobile
+    });
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        attribution: '© CARTO'
+    }).addTo(map);
+
+    fetch('https://raw.githubusercontent.com/southkorea/southkorea-maps/master/kostat/2013/json/skorea_provinces_geo_simple.json')
+        .then(r => r.json()).then(data => {
+        L.geoJson(data, {
+            style: f => f.properties.name === '서울특별시'
+                ? {color: "#fb8500", weight: 3, opacity: 0.8, fillOpacity: 0.08, fillColor: "#ffb703"}
+                : {color: "#d1d5db", weight: 1, opacity: 0.5, fillColor: "#f3f4f6", fillOpacity: 0.6}
+        }).addTo(map);
+    });
+
+    const locations = [
+        {lat: 37.5445, lng: 127.0560, name: "성수동", query: "서울쥐야! 나 성수동 가는데 코디 추천해줘"},
+        {lat: 37.5367, lng: 127.0000, name: "한남동", query: "한남동 예쁜 카페 갈 때 어떻게 입어?"},
+        {lat: 37.5563, lng: 126.9227, name: "홍대", query: "홍대 놀러 갈 건데 힙한 룩 알려줘 쥐!"},
+        {lat: 37.5270, lng: 127.0360, name: "압구정", query: "압구정 가는데 촌스러워 보이기 싫어!"},
+        {lat: 37.5250, lng: 127.0473, name: "청담", query: "청담동 가는데 우아한 룩 추천해줘"},
+        {lat: 37.5340, lng: 126.9940, name: "이태원", query: "이태원 핫플 가는데 튀는 옷 입고 싶어!"},
+        {lat: 37.5271, lng: 126.9328, name: "여의도", query: "여의도 한강공원 갈 건데 편한 옷 알려줘"},
+        {lat: 37.5826, lng: 126.9831, name: "북촌", query: "북촌 한옥마을 갈 건데 단아하게 입고 싶어"},
+        {lat: 37.5280, lng: 126.9675, name: "신용산", query: "용리단길 트렌디하게 입는 법 알려줘"},
+        {lat: 37.5555, lng: 126.9040, name: "망원", query: "망원동 소품샵 갈 건데 귀여운 룩 추천해줘"},
+        {lat: 37.5490, lng: 126.9130, name: "합정", query: "합정 감성적인 코디 알려줘 서울쥐야"},
+        {lat: 37.5470, lng: 126.9220, name: "상수", query: "상수동 골목 갈 건데 어떻게 입지?"},
+        {lat: 37.5663, lng: 126.9912, name: "을지로", query: "힙지로 간다! 레트로 코디 알려줘"}
+    ];
+
+    const latlngs = [];
+    let lastClickTime = 0;
+    locations.forEach(loc => {
+        const marker = L.marker([loc.lat, loc.lng]).addTo(map);
+        latlngs.push([loc.lat, loc.lng]);
+        marker.bindTooltip(loc.name, {
+            permanent: true,
+            direction: 'top',
+            offset: [-16, 0],
+            className: 'custom-map-label',
+            interactive: true
+        });
+        marker.on('mouseover', () => marker.getTooltip()?.getElement()?.classList.add('hovered-tooltip'));
+        marker.on('mouseout', () => marker.getTooltip()?.getElement()?.classList.remove('hovered-tooltip'));
+        marker.on('click', () => {
+            const now = Date.now();
+            if (now - lastClickTime < 300) return;
+            lastClickTime = now;
+            processUserMessage(loc.query);
+        });
+    });
+    map.fitBounds(L.latLngBounds(latlngs), {padding: isMobile ? [20, 20] : [300, 300]});
+
+    // ── DOM ───────────────────────────────────────────────────
+    const chatBox = document.getElementById('chatBox');
+    const userInput = document.getElementById('userInput');
+    const typingIndicator = document.getElementById('typingIndicator');
+    const genderToggle = document.getElementById('genderToggle');
+
+    // ── UI 헬퍼 ───────────────────────────────────────────────
+    function addMessage(html, sender) {
+        const div = document.createElement('div');
+        div.classList.add('message', sender === 'user' ? 'user-message' : 'ai-message');
+        div.innerHTML = html;
+        chatBox.insertBefore(div, typingIndicator);
+        scrollToBottom();
+    }
+
+    function scrollToBottom() {
+        setTimeout(() => {
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 50);
+    }
+
+    function showTyping() {
+        typingIndicator.style.display = 'flex';
+        scrollToBottom();
+    }
+
+    function hideTyping() {
+        typingIndicator.style.display = 'none';
+    }
+
+    // ── API 호출: 텍스트 ──────────────────────────────────────
+    async function askText(text, isFemale) {
+        const res = await fetch(`${API_BASE}/chat`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({message: text, is_female: isFemale}),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `서버 오류 (${res.status})`);
+        return data.reply;
+    }
+
+    // ── API 호출: 이미지 생성 (Gemini) ───────────────────────
+    async function generateImage() {
+        const res = await fetch(`${API_BASE}/image`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({}),   // style 생략 → 서버가 마지막 답변 자동 사용
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `이미지 생성 오류 (${res.status})`);
+        return `data:image/png;base64,${data.image_b64}`;
+    }
+
+    // ── 메시지 처리 ───────────────────────────────────────────
+    function processUserMessage(text) {
+        if (!text) return;
+        document.querySelectorAll('.action-btn').forEach(b => b.remove());
+        addMessage(text, 'user');
+        userInput.value = '';
+        showTyping();
+
+        askText(text, genderToggle.checked)
+            .then(reply => {
+                hideTyping();
+                const hasLocation = LOCATION_KEYWORDS.some(kw => text.includes(kw));
+                const photoBtn = hasLocation
+                    ? `<br><button class="action-btn" id="photoBtn">AI가 그려준 코디 보기 🎨</button>`
+                    : '';
+                addMessage(reply + photoBtn, 'ai');
+            })
+            .catch(err => {
+                hideTyping();
+                addMessage(`앗, 서울쥐가 잠깐 길을 잃었어... 다시 물어봐줄래? 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
+                checkServerHealth();
+            });
+    }
+
+    // ── 이미지 버튼 클릭 ──────────────────────────────────────
+    chatBox.addEventListener('click', async (e) => {
+        const btn = e.target.closest('.action-btn');
+        if (!btn) {
+            // 이미지 클릭 → 모달
+            if (e.target.tagName === 'IMG' && e.target.classList.contains('chat-image')) {
+                openModal(e.target.src);
+            }
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = "AI가 코디 그리는 중... 🎨⏳";
+        showTyping();
+
+        try {
+            const src = await generateImage();
+            hideTyping();
+            btn.style.display = 'none';
+            addMessage(
+                `<img src="${src}" class="chat-image" alt="AI 생성 코디">` +
+                `이런 느낌 어때? 시골쥐 너한테 아주 잘 어울릴 거야! 🧀✨`,
+                'ai'
+            );
+        } catch (err) {
+            hideTyping();
+            btn.disabled = false;
+            btn.textContent = "AI가 그려준 코디 보기 🎨";
+            addMessage(`이미지 생성 중 오류가 났어 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
+        }
+    });
+
+    // ── 입력 이벤트 ───────────────────────────────────────────
+    document.getElementById('sendBtn').addEventListener('click', () => processUserMessage(userInput.value.trim()));
+    userInput.addEventListener('keypress', e => {
+        if (e.key === 'Enter') processUserMessage(userInput.value.trim());
+    });
+
+    // ── 이미지 모달 ───────────────────────────────────────────
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('expandedImg');
+    const closeBtn = document.querySelector('.close-modal');
+
+    function openModal(src) {
+        modalImg.src = src;
+        modal.classList.add('show');
+    }
+
+    function closeModal() {
+        modal.classList.remove('show');
+        setTimeout(() => {
+            modalImg.src = '';
+        }, 300);
+    }
+
+    closeBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', e => {
+        if (e.target === modal) closeModal();
+    });
+</script>
+</body>
+</html>
