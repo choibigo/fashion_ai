@@ -98,7 +98,7 @@ class GeminiChat:
             ),
         )
 
-        reply = response.text.strip()
+        reply = response.text.strip().replace("**", "")
 
         self._history.append(
             types.Content(role="model", parts=[types.Part(text=reply)])
@@ -126,11 +126,18 @@ class GeminiChat:
             ),
         )
 
-        for part in response.candidates[0].content.parts:
+        candidates = response.candidates
+        if not candidates:
+            raise RuntimeError(f"candidates 없음. response: {response}")
+
+        parts = candidates[0].content.parts
+        print(f"[DEBUG] parts count: {len(parts)}")
+        for i, part in enumerate(parts):
+            print(f"[DEBUG] part[{i}] inline_data={part.inline_data is not None}, text={repr(part.text)[:80] if part.text else None}")
             if part.inline_data is not None:
                 return part.inline_data.data   # bytes (PNG)
 
-        raise RuntimeError("이미지 데이터를 받지 못했습니다.")
+        raise RuntimeError(f"이미지 데이터를 받지 못했습니다. parts={parts}")
 
     def generate_image_b64(self, style_description: str = "") -> str:
         """이미지를 base64 문자열로 반환 (HTML <img src> 에 바로 사용 가능)"""
