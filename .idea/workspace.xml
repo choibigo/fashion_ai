@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3dedd386-fc47-4923-9d32-6ee5e5b90b6b" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gemini_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/gemini_chat.py" afterDir="false" />
-    </list>
+    <list default="true" id="3dedd386-fc47-4923-9d32-6ee5e5b90b6b" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -69,7 +66,7 @@
       <workItem from="1777360573333" duration="696000" />
       <workItem from="1777374921806" duration="1374000" />
       <workItem from="1777460839407" duration="289000" />
-      <workItem from="1777461153115" duration="384000" />
+      <workItem from="1777461153115" duration="732000" />
     </task>
     <servers />
   </component>
