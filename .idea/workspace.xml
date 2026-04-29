@@ -1,13 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="3dedd386-fc47-4923-9d32-6ee5e5b90b6b" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/gemini_chat.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/index_api.html" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/server.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
-    </list>
+    <list default="true" id="3dedd386-fc47-4923-9d32-6ee5e5b90b6b" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,6 +11,7 @@
     <option name="RECENT_TEMPLATES">
       <list>
         <option value="Python Script" />
+        <option value="HTML File" />
       </list>
     </option>
   </component>
@@ -69,7 +64,7 @@
       <workItem from="1777260839190" duration="10000" />
       <workItem from="1777354509590" duration="1010000" />
       <workItem from="1777360573333" duration="696000" />
-      <workItem from="1777374921806" duration="1279000" />
+      <workItem from="1777374921806" duration="1374000" />
     </task>
     <servers />
   </component>
