@@ -8,7 +8,13 @@ from flask import Flask, request, jsonify, make_response
 from gemini_chat import GeminiChat
 
 app = Flask(__name__)
-bot: GeminiChat = None
+
+# ── bot 초기화 (gunicorn도 여기서 실행됨) ─────────────────────
+api_key = os.getenv("GEMINI_API_KEY")
+if not api_key:
+    raise RuntimeError("❌ GEMINI_API_KEY 환경변수를 설정하세요.")
+bot = GeminiChat(api_key=api_key)
+print(f"✅ 서울쥐 봇 초기화 완료 (모델: {bot.model_name})")
 
 
 # ── CORS 헤더를 모든 응답에 직접 추가 ────────────────────────
@@ -84,17 +90,27 @@ def health():
     return jsonify({"status": "ok", "model": bot.model_name})
 
 
+# if __name__ == "__main__":
+#     parser = argparse.ArgumentParser()
+#     parser.add_argument("--api-key", type=str, default=None)
+#     parser.add_argument("--port", type=int, default=5001)
+#     parser.add_argument("--host", type=str, default="127.0.0.1")
+#     args = parser.parse_args()
+#
+#     api_key = args.api_key or os.getenv("GEMINI_API_KEY")
+#     if not api_key:
+#         raise SystemExit("❌ --api-key 또는 GEMINI_API_KEY 환경변수를 설정하세요.")
+#
+#     bot = GeminiChat(api_key=api_key)
+#     print(f"✅ 서울쥐 서버 시작! http://{args.host}:{args.port}")
+#     app.run(host=args.host, port=args.port, debug=False)
+
+
+# ── 로컬 실행용 (python server.py) ───────────────────────────
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--api-key", type=str, default=None)
     parser.add_argument("--port", type=int, default=5001)
     parser.add_argument("--host", type=str, default="127.0.0.1")
     args = parser.parse_args()
-
-    api_key = args.api_key or os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise SystemExit("❌ --api-key 또는 GEMINI_API_KEY 환경변수를 설정하세요.")
-
-    bot = GeminiChat(api_key=api_key)
     print(f"✅ 서울쥐 서버 시작! http://{args.host}:{args.port}")
     app.run(host=args.host, port=args.port, debug=False)
