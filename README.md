@@ -1,7 +1,10 @@
 # Seoul Mouse's Guide 🐭🧀
 
-서울의 동네별 패션 코디를 추천해주는 AI 챗봇 웹 애플리케이션입니다.  
+> 서울의 동네별 패션 코디를 추천해주는 AI 챗봇 웹 애플리케이션
+
 시골에서 올라온 **시골쥐**를 위해 힙한 **서울쥐** 캐릭터가 동네 분위기에 맞는 옷차림을 알려줍니다.
+
+🔗 **[choibigo.github.io/fashion_ai](https://choibigo.github.io/fashion_ai)**
 
 ---
 
@@ -25,72 +28,24 @@
 
 ```
 fashion_ai/
-├── index_api.html    # 웹 프론트엔드 (Flask 백엔드 필요)
+├── index.html    # 웹 프론트엔드
 ├── server.py         # Flask API 서버
-└── gemini_chat.py    # Google Gemini API 연동 모듈
+├── gemini_chat.py    # Google Gemini API 연동 모듈
+└── README.md
 ```
 
 ---
 
-## 시작하기
+## 아키텍처
 
-### 1. 사전 준비
-
-- Python 3.10 이상
-- [Google Gemini API 키](https://aistudio.google.com/apikey)
-
-### 2. Conda 환경 구성
-
-```bash
-conda create -n fashion_ai python=3.11 -y
-conda activate fashion_ai
-pip install flask google-genai
 ```
-
-### 3. 서버 실행
-
-```bash
-# 방법 1: 환경변수로 API 키 설정
-export GEMINI_API_KEY="your_api_key_here"
-python server.py
-
-# 방법 2: 인자로 직접 전달
-python server.py --api-key "your_api_key_here"
-
-# 포트 및 호스트 변경 (기본값: 127.0.0.1:5001)
-python server.py --api-key "your_api_key_here" --host 0.0.0.0 --port 8080
-```
-
-### 4. 웹 브라우저에서 열기
-
-서버 실행 후 `index_api.html`을 브라우저에서 열기
-
----
-
-## API 엔드포인트
-
-| 메서드 | 경로 | 설명 |
-|--------|------|------|
-| `POST` | `/chat` | 텍스트 질문 → AI 코디 추천 응답 |
-| `POST` | `/image` | 코디 설명 → Base64 이미지 생성 |
-| `POST` | `/reset` | 대화 히스토리 초기화 |
-| `GET`  | `/health` | 서버 상태 확인 |
-
-### `/chat` 요청 예시
-
-```json
-{
-  "message": "홍대 가는데 힙한 룩 알려줘!",
-  "is_female": false
-}
-```
-
-### `/image` 요청 예시
-
-```json
-{
-  "style": "cargo pants, oversized vintage t-shirt, chunky sneakers"
-}
+브라우저 (index.html)
+        ↓ fetch
+Flask API 서버 (server.py)
+        ↓
+Gemini API (gemini_chat.py)
+  ├── 텍스트: gemini-2.5-flash-lite
+  └── 이미지: gemini-2.5-flash-image
 ```
 
 ---
@@ -101,7 +56,7 @@ python server.py --api-key "your_api_key_here" --host 0.0.0.0 --port 8080
 |------|-----------|
 | 프론트엔드 | HTML, CSS, Vanilla JS |
 | 지도 | Leaflet.js 1.9.4 |
-| 백엔드 | Python, Flask |
+| 백엔드 | Python, Flask, gunicorn |
 | AI | Google Gemini API (`google-genai`) |
 | 텍스트 모델 | `gemini-2.5-flash-lite` |
 | 이미지 모델 | `gemini-2.5-flash-image` |
@@ -113,7 +68,9 @@ python server.py --api-key "your_api_key_here" --host 0.0.0.0 --port 8080
 
 치즈를 모티브로 한 노란색 계열 컬러 팔레트를 사용합니다.
 
-- 배경: `#fffdf2` (크림 치즈)
-- 유저 말풍선: `#ffb703` (체다 치즈)
-- AI 말풍선: `#fef08a` (에멘탈 치즈)
-- 포인트: `#fb8500` (오렌지 치즈)
+| 역할 | 컬러 | 설명 |
+|------|------|------|
+| 배경 | `#fffdf2` | 크림 치즈 |
+| 유저 말풍선 | `#ffb703` | 체다 치즈 |
+| AI 말풍선 | `#fef08a` | 에멘탈 치즈 |
+| 포인트 | `#fb8500` | 오렌지 치즈 |
