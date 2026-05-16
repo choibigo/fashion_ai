@@ -6,6 +6,7 @@ gemini_chat.py
 
 import os
 import base64
+import uuid
 from google import genai
 from google.genai import types
 
@@ -30,8 +31,8 @@ SYSTEM_INSTRUCTION = """
 """
 
 GENDER_HINTS = {
-    "female": "사용자는 여성입니다. 여성 패션 아이템(스커트, 블라우스, 힐 등)을 중심으로 추천하세요.",
-    "male": "사용자는 남성입니다. 남성 패션 아이템(자켓, 팬츠, 스니커즈 등)을 중심으로 추천하세요.",
+    "female": "사용자는 여성입니다. 여성 패션 아이템(스커트, 블라우스, 힐 등)을 중심으로 추천하세요. 답변은 여성스러운 표현으로 해주세요.",
+    "male": "사용자는 남성입니다. 남성 패션 아이템(자켓, 팬츠, 스니커즈 등)을 중심으로 추천하세요. 답변은 남성적인 표현으로 해주세요.",
 }
 
 TEXT_MODEL = "gemini-2.5-flash-lite"  # 싼 모델
@@ -90,12 +91,37 @@ Format: "wearing [detailed outfit description with trend-accurate styling]"
         )
         return response.text.strip()
 
+    # def _build_image_prompt(self, english_style: str) -> str:
+    #     gender = "young Korean woman" if self._is_female else "young Korean man"
+    #     return (
+    #         f"A full-body fashion editorial photo of a {gender} {english_style}. "
+    #         "Seoul street background, natural daylight, shot on film camera, "
+    #         "high quality, photorealistic, fashion magazine style. "
+    #         "No text, no letters, no watermark, no captions, no overlays."
+    #     )
+    
     def _build_image_prompt(self, english_style: str) -> str:
         gender = "young Korean woman" if self._is_female else "young Korean man"
+        
+        # 매 호출마다 달라지는 고유 ID 생성 (동일 프롬프트로 인한 고착화 방지)
+        variation_id = str(uuid.uuid4())[:8]
+
         return (
-            f"A full-body fashion editorial photo of a {gender} {english_style}. "
+            # 강력하고 구체적인 다양성 지시 (이전 제안보다 훨씬 강력해짐!)
+            "THIS IS A NEW, DISTINCT GENERATION. DO NOT CREATE ANYTHING SIMILAR TO PREVIOUS VERSIONS. "
+            f"Generate a completely unique and original interpretation of this outfit for a {gender} [Variation ID: {variation_id}]. "
+            "Ensure ALL garment details, fabrics, textures, colors, and designs are distinctly different from ANY previous interpretations of this exact prompt. "
+            "Change the silhouette, lapel design, button style, pocket placements, fabric weave, and color nuances of all clothing items. "
+            "If specific items are mentioned (e.g., 'black blazer'), do not produce the same black blazer; create a completely new one with different characteristics. "
+            
+            # 코디 설명
+            f"{english_style}. "
+            
+            # 배경 및 스타일
             "Seoul street background, natural daylight, shot on film camera, "
             "high quality, photorealistic, fashion magazine style. "
+            
+            # 불필요한 요소 제거
             "No text, no letters, no watermark, no captions, no overlays."
         )
 
@@ -111,7 +137,20 @@ Format: "wearing [detailed outfit description with trend-accurate styling]"
 
     def ask(self, user_text: str, is_female=None) -> str:
         """텍스트 답변 반환"""
-        if is_female is not None:
+        if is_female is not None and is_female != self._is_female:
+            gender_str = "여성" if is_female else "남성"
+            self._history.append(
+                types.Content(role="user", parts=[types.Part(
+                    text=f"[성별 변경] 이제부터 나는 {gender_str}이야. {gender_str} 패션으로 추천해줘."
+                )])
+            )
+            self._history.append(
+                types.Content(role="model", parts=[types.Part(
+                    text=f"알겠어! 이제부터 {gender_str} 코디로 추천해줄게! 찍찍! 🐭"
+                )])
+            )
+            self.set_gender(is_female)
+        elif is_female is not None:
             self.set_gender(is_female)
 
         self._history.append(
