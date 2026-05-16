@@ -566,6 +566,31 @@
             color: var(--accent);
         }
 
+        .regen-btn {
+            display: inline-block;
+            margin-top: 8px;
+            padding: 8px 16px;
+            background: #fff;
+            border: 1.5px solid var(--border-color);
+            color: #666;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            transition: all 0.2s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .regen-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .regen-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 768px) {
             .app-wrapper {
                 flex-direction: column;
@@ -648,8 +673,9 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
     // ── 설정 ──────────────────────────────────────────────────
-    // const API_BASE = "http://127.0.0.1:5001";
-    const API_BASE = "http://13.125.244.234:5001/";
+    const API_BASE = "http://127.0.0.1:5001";
+    //const API_BASE = "http://3.35.209.39:5001";
+    // const API_BASE = "https://fashionai.duckdns.org";
 
     const LOCATION_KEYWORDS = [
         "성수", "한남", "홍대", "압구정", "청담", "이태원",
@@ -889,7 +915,7 @@
 
     // ── 이미지 버튼 클릭 ──────────────────────────────────────
     chatBox.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.action-btn');
+        const btn = e.target.closest('.action-btn, .regen-btn');
         if (!btn) {
             // 이미지 클릭 → 모달
             if (e.target.tagName === 'IMG' && e.target.classList.contains('chat-image')) {
@@ -898,25 +924,57 @@
             return;
         }
 
-        btn.disabled = true;
-        btn.textContent = "AI가 코디 그리는 중... 🎨⏳";
-        showTyping();
+        const isRegen = btn.classList.contains('regen-btn');
 
-        try {
-            const src = await generateImage();
-            hideTyping();
-            btn.style.display = 'none';
-            addMessage(
-                `<img src="${src}" class="chat-image" alt="AI 생성 코디">` +
-                `이런 느낌 어때? 시골쥐 너한테 아주 잘 어울릴 거야! 🧀✨<br>` +
-                `<a class="download-btn" href="${src}" download="seoul-mouse-codi.png">⬇️ 이미지 저장</a>`,
-                'ai'
-            );
-        } catch (err) {
-            hideTyping();
-            btn.disabled = false;
-            btn.textContent = "AI가 그려준 코디 보기 🎨";
-            addMessage(`이미지 생성 중 오류가 났어 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
+        if (isRegen) {
+            // 재생성 버튼
+            btn.disabled = true;
+            btn.textContent = "AI가 다시 그리는 중... 🎨⏳";
+            showTyping();
+
+            try {
+                const src = await generateImage();
+                hideTyping();
+                btn.disabled = false;
+                btn.textContent = "🔄 다시 그려줘";
+                const newMsgId = Date.now();
+                addMessage(
+                    `<img src="${src}" class="chat-image" id="img-${newMsgId}" alt="AI 생성 코디">` +
+                    `다른 느낌도 어때? 이것도 너한테 잘 어울릴 거야! 🧀✨<br>` +
+                    `<a class="download-btn" href="${src}" download="seoul-mouse-codi.png" id="dl-${newMsgId}">⬇️ 이미지 저장</a>` +
+                    `<button class="regen-btn" data-img-id="${newMsgId}">🔄 다시 그려줘</button>`,
+                    'ai'
+                );
+            } catch (err) {
+                hideTyping();
+                btn.disabled = false;
+                btn.textContent = "🔄 다시 그려줘";
+                addMessage(`이미지 재생성 중 오류가 났어 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
+            }
+        } else {
+            // 최초 생성 버튼
+            btn.disabled = true;
+            btn.textContent = "AI가 코디 그리는 중... 🎨⏳";
+            showTyping();
+
+            try {
+                const src = await generateImage();
+                hideTyping();
+                btn.style.display = 'none';
+                const msgId = Date.now();
+                addMessage(
+                    `<img src="${src}" class="chat-image" id="img-${msgId}" alt="AI 생성 코디">` +
+                    `이런 느낌 어때? 시골쥐 너한테 아주 잘 어울릴 거야! 🧀✨<br>` +
+                    `<a class="download-btn" href="${src}" download="seoul-mouse-codi.png" id="dl-${msgId}">⬇️ 이미지 저장</a>` +
+                    `<button class="regen-btn" data-img-id="${msgId}">🔄 다시 그려줘</button>`,
+                    'ai'
+                );
+            } catch (err) {
+                hideTyping();
+                btn.disabled = false;
+                btn.textContent = "AI가 그려준 코디 보기 🎨";
+                addMessage(`이미지 생성 중 오류가 났어 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
+            }
         }
     });
 
