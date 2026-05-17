@@ -672,7 +672,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
-    // ── 설정 ──────────────────────────────────────────────────
+    // ── 설정 (index_api.html 전용 주소 매핑 보존) ─────────────
     const API_BASE = "http://127.0.0.1:5001";
     //const API_BASE = "http://3.35.209.39:5001";
     // const API_BASE = "https://fashionai.duckdns.org";
@@ -682,6 +682,9 @@
         "여의도", "한강", "북촌", "한옥", "신용산", "용리단",
         "망원", "합정", "상수", "을지로", "힙지로"
     ];
+
+    // 실시간 날씨 정보를 담을 전역 변수 공간 확보
+    let seoulWeatherStatus = "";
 
     // ── 로딩 ──────────────────────────────────────────────────
     window.addEventListener('load', () => {
@@ -716,13 +719,19 @@
     checkServerHealth();
 
     // ── 서울 날씨 ─────────────────────────────────────────────
+    const WMO_MAP = {
+        0: 'Sunny', 1: 'Mainly Clear', 2: 'Partly Cloudy', 3: 'Overcast',
+        45: 'Foggy', 48: 'Depositing Rime Fog',
+        51: 'Light Drizzle', 53: 'Moderate Drizzle', 55: 'Dense Drizzle',
+        61: 'Light Rain', 63: 'Moderate Rain', 65: 'Heavy Rain',
+        71: 'Light Snow', 73: 'Moderate Snow', 75: 'Heavy Snow',
+        80: 'Light Rain Showers', 81: 'Moderate Rain Showers', 82: 'Violent Rain Showers',
+        95: 'Thunderstorm', 96: 'Thunderstorm with Light Hail', 99: 'Thunderstorm with Heavy Hail'
+    };
     const WMO_ICON = {
-        0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️',
-        45: '🌫️', 48: '🌫️',
-        51: '🌦️', 53: '🌦️', 55: '🌧️',
-        61: '🌧️', 63: '🌧️', 65: '🌧️',
-        71: '❄️', 73: '❄️', 75: '❄️',
-        80: '🌦️', 81: '🌧️', 82: '⛈️',
+        0: '☀️', 1: '🌤️', 2: '⛅', 3: '☁️', 45: '🌫️', 48: '🌫️',
+        51: '🌦️', 53: '🌦️', 55: '🌧️', 61: '🌧️', 63: '🌧️', 65: '🌧️',
+        71: '❄️', 73: '❄️', 75: '❄️', 80: '🌦️', 81: '🌧️', 82: '⛈️',
         95: '⛈️', 96: '⛈️', 99: '⛈️'
     };
 
@@ -736,11 +745,16 @@
             const temp = Math.round(data.current.temperature_2m);
             const code = data.current.weather_code;
             const icon = WMO_ICON[code] ?? '🌡️';
+            const textDesc = WMO_MAP[code] ?? 'Seasonal Weather';
+            
+            // 전역 변수에 백엔드 전송용 영문 파싱 데이터 바인딩
+            seoulWeatherStatus = `${textDesc}, ${temp}°C`;
+
             document.getElementById('weatherIcon').textContent = icon;
             document.getElementById('weatherText').textContent = `서울 ${temp}°C`;
             document.getElementById('weatherBadge').style.display = 'inline-flex';
         } catch {
-            // 날씨 실패해도 UI에 영향 없음
+            seoulWeatherStatus = "";
         }
     }
 
@@ -750,18 +764,15 @@
     async function resetChat() {
         try {
             await fetch(`${API_BASE}/reset`, {method: 'POST'});
-        } catch { /* 서버 오류 무시 */
-        }
+        } catch {}
 
         const chatBox = document.getElementById('chatBox');
         const typingIndicator = document.getElementById('typingIndicator');
-        // 초기 인삿말 외 모든 메시지 제거
         [...chatBox.querySelectorAll('.message, .action-btn')].forEach(el => {
             if (!el.classList.contains('ai-message') || el !== chatBox.firstElementChild) {
                 el.remove();
             }
         });
-        // 채팅박스를 초기 메시지 하나만 남기고 리셋
         while (chatBox.firstChild && chatBox.firstChild !== typingIndicator) {
             chatBox.removeChild(chatBox.firstChild);
         }
@@ -812,17 +823,11 @@
         {lat: 37.5663, lng: 126.9912, name: "을지로", query: "힙지로 간다! 레트로 코디 알려줘"}
     ];
 
-    const latlngs = [];
     let lastClickTime = 0;
     locations.forEach(loc => {
         const marker = L.marker([loc.lat, loc.lng]).addTo(map);
-        latlngs.push([loc.lat, loc.lng]);
         marker.bindTooltip(loc.name, {
-            permanent: true,
-            direction: 'top',
-            offset: [-16, 0],
-            className: 'custom-map-label',
-            interactive: true
+            permanent: true, direction: 'top', offset: [-16, 0], className: 'custom-map-label', interactive: true
         });
         marker.on('mouseover', () => marker.getTooltip()?.getElement()?.classList.add('hovered-tooltip'));
         marker.on('mouseout', () => marker.getTooltip()?.getElement()?.classList.remove('hovered-tooltip'));
@@ -833,7 +838,7 @@
             processUserMessage(loc.query);
         });
     });
-    map.fitBounds(L.latLngBounds(latlngs), {padding: isMobile ? [20, 20] : [300, 300]});
+    map.fitBounds(L.latLngBounds(locations.map(l => [l.lat, l.lng])), {padding: isMobile ? [20, 20] : [300, 300]});
 
     // ── DOM ───────────────────────────────────────────────────
     const chatBox = document.getElementById('chatBox');
@@ -851,9 +856,7 @@
     }
 
     function scrollToBottom() {
-        setTimeout(() => {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }, 50);
+        setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 50);
     }
 
     function showTyping() {
@@ -861,28 +864,26 @@
         scrollToBottom();
     }
 
-    function hideTyping() {
-        typingIndicator.style.display = 'none';
-    }
+    function hideTyping() { typingIndicator.style.display = 'none'; }
 
-    // ── API 호출: 텍스트 ──────────────────────────────────────
-    async function askText(text, isFemale) {
+    // ── API 호출: 텍스트 (날씨 수용 파라미터 내장) ────────────
+    async function askText(text, isFemale, weatherInfo) {
         const res = await fetch(`${API_BASE}/chat`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({message: text, is_female: isFemale}),
+            body: JSON.stringify({message: text, is_female: isFemale, weather_info: weatherInfo}),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `서버 오류 (${res.status})`);
         return data.reply;
     }
 
-    // ── API 호출: 이미지 생성 (Gemini) ───────────────────────
-    async function generateImage() {
+    // ── API 호출: 이미지 생성 (날씨 수용 파라미터 내장) ──────────
+    async function generateImage(weatherInfo) {
         const res = await fetch(`${API_BASE}/image`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({}),   // style 생략 → 서버가 마지막 답변 자동 사용
+            body: JSON.stringify({weather_info: weatherInfo}),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `이미지 생성 오류 (${res.status})`);
@@ -897,7 +898,7 @@
         userInput.value = '';
         showTyping();
 
-        askText(text, genderToggle.checked)
+        askText(text, genderToggle.checked, seoulWeatherStatus)
             .then(reply => {
                 hideTyping();
                 const hasLocation = LOCATION_KEYWORDS.some(kw => text.includes(kw));
@@ -917,7 +918,6 @@
     chatBox.addEventListener('click', async (e) => {
         const btn = e.target.closest('.action-btn, .regen-btn');
         if (!btn) {
-            // 이미지 클릭 → 모달
             if (e.target.tagName === 'IMG' && e.target.classList.contains('chat-image')) {
                 openModal(e.target.src);
             }
@@ -927,13 +927,12 @@
         const isRegen = btn.classList.contains('regen-btn');
 
         if (isRegen) {
-            // 재생성 버튼
             btn.disabled = true;
             btn.textContent = "AI가 다시 그리는 중... 🎨⏳";
             showTyping();
 
             try {
-                const src = await generateImage();
+                const src = await generateImage(seoulWeatherStatus);
                 hideTyping();
                 btn.disabled = false;
                 btn.textContent = "🔄 다시 그려줘";
@@ -952,13 +951,12 @@
                 addMessage(`이미지 재생성 중 오류가 났어 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
             }
         } else {
-            // 최초 생성 버튼
             btn.disabled = true;
             btn.textContent = "AI가 코디 그리는 중... 🎨⏳";
             showTyping();
 
             try {
-                const src = await generateImage();
+                const src = await generateImage(seoulWeatherStatus);
                 hideTyping();
                 btn.style.display = 'none';
                 const msgId = Date.now();
@@ -996,15 +994,11 @@
 
     function closeModal() {
         modal.classList.remove('show');
-        setTimeout(() => {
-            modalImg.src = '';
-        }, 300);
+        setTimeout(() => { modalImg.src = ''; }, 300);
     }
 
     closeBtn.addEventListener('click', closeModal);
-    modal.addEventListener('click', e => {
-        if (e.target === modal) closeModal();
-    });
+    modal.addEventListener('click', e => { if (e.target === modal) closeModal(); });
 </script>
 </body>
 </html>

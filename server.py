@@ -1,5 +1,5 @@
 """
-server.py - CORS 직접 처리 버전
+server.py - CORS 직접 처리 버전 (날씨 정보 연동 파라미터 확장)
 """
 
 import os
@@ -43,12 +43,13 @@ def chat():
     data = request.get_json(silent=True) or {}
     user_text = data.get("message", "").strip()
     is_female = bool(data.get("is_female", False))
+    weather_info = data.get("weather_info", "").strip() # 날씨 정보 파싱 추가
 
     if not user_text:
         return jsonify({"error": "message 필드가 비어 있습니다."}), 400
 
     try:
-        reply = bot.ask(user_text, is_female=is_female)
+        reply = bot.ask(user_text, is_female=is_female, weather_info=weather_info)
         return jsonify({"reply": reply})
     except Exception as e:
         import traceback;
@@ -64,9 +65,10 @@ def chat():
 def image():
     data = request.get_json(silent=True) or {}
     style = data.get("style", "").strip()
+    weather_info = data.get("weather_info", "").strip() # 날씨 정보 파싱 추가
 
     try:
-        b64 = bot.generate_image_b64(style)
+        b64 = bot.generate_image_b64(style, weather_info=weather_info)
         return jsonify({"image_b64": b64})
     except Exception as e:
         import traceback;
@@ -88,22 +90,6 @@ def reset():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "ok", "model": bot.model_name})
-
-
-# if __name__ == "__main__":
-#     parser = argparse.ArgumentParser()
-#     parser.add_argument("--api-key", type=str, default=None)
-#     parser.add_argument("--port", type=int, default=5001)
-#     parser.add_argument("--host", type=str, default="127.0.0.1")
-#     args = parser.parse_args()
-#
-#     api_key = args.api_key or os.getenv("GEMINI_API_KEY")
-#     if not api_key:
-#         raise SystemExit("❌ --api-key 또는 GEMINI_API_KEY 환경변수를 설정하세요.")
-#
-#     bot = GeminiChat(api_key=api_key)
-#     print(f"✅ 서울쥐 서버 시작! http://{args.host}:{args.port}")
-#     app.run(host=args.host, port=args.port, debug=False)
 
 
 # ── 로컬 실행용 (python server.py) ───────────────────────────
