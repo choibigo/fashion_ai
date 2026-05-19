@@ -43,7 +43,7 @@ def chat():
     data = request.get_json(silent=True) or {}
     user_text = data.get("message", "").strip()
     is_female = bool(data.get("is_female", False))
-    weather_info = data.get("weather_info", "").strip() # 날씨 정보 파싱 추가
+    weather_info = data.get("weather_info", "").strip()  # 날씨 정보 파싱 추가
 
     if not user_text:
         return jsonify({"error": "message 필드가 비어 있습니다."}), 400
@@ -65,10 +65,11 @@ def chat():
 def image():
     data = request.get_json(silent=True) or {}
     style = data.get("style", "").strip()
-    weather_info = data.get("weather_info", "").strip() # 날씨 정보 파싱 추가
+    weather_info = data.get("weather_info", "").strip()  # 날씨 정보 파싱 추가
+    regenerate = bool(data.get("regenerate", False))
 
     try:
-        b64 = bot.generate_image_b64(style, weather_info=weather_info)
+        b64 = bot.generate_image_b64(style, weather_info=weather_info, regenerate=regenerate)
         return jsonify({"image_b64": b64})
     except Exception as e:
         import traceback;
