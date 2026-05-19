@@ -2,6 +2,7 @@
 gemini_chat.py
 텍스트: gemini-2.5-flash-lite
 이미지 생성: gemini-2.5-flash-image
+날씨 및 기온 정보 반영 프롬프트 엔지니어링 적용 버전
 """
 
 import os
@@ -35,9 +36,9 @@ GENDER_HINTS = {
     "male": "사용자는 남성입니다. 남성 패션 아이템(자켓, 팬츠, 스니커즈 등)을 중심으로 추천하세요. 답변은 남성적인 표현으로 해주세요.",
 }
 
-TEXT_MODEL = "gemini-2.5-flash-lite"  # 싼 모델
+TEXT_MODEL = "gemini-2.5-flash-lite"
 # TEXT_MODEL  = "gemini-3-flash-preview"    # 비싼 모델
-IMAGE_MODEL = "gemini-2.5-flash-image"  # 싼 모델
+IMAGE_MODEL = "gemini-2.5-flash-image"
 # IMAGE_MODEL = "gemini-3.1-flash-image-preview"  # 비싼 모델
 
 
@@ -53,6 +54,8 @@ class GeminiChat:
         self._is_female = False
         self._history = []  # list[types.Content]
         self._last_style = ""  # 마지막 코디 설명 (이미지 생성 프롬프트용)
+        self._last_reply = ""  # 마지막 한국어 답변 (재생성 시 재번역용)
+        self._last_weather = ""  # 마지막 대화 시점의 날씨 정보 저장
 
     # ── 내부 ──────────────────────────────────────
 
@@ -60,67 +63,84 @@ class GeminiChat:
         hint = GENDER_HINTS["female" if self._is_female else "male"]
         return SYSTEM_INSTRUCTION.strip() + f"\n\n[성별 힌트]\n{hint}"
 
-    def _translate_to_image_prompt(self, korean_style: str) -> str:
-        """한국어 코디 설명 → CoT 기반 영문 이미지 생성 프롬프트 변환"""
+    def _translate_to_image_prompt(self, korean_style: str, weather_info: str = "", regenerate: bool = False) -> str:
+        """한국어 코디 설명 → CoT 기반 영문 이미지 생성 프롬프트 변환 (날씨 반영 가이드 포함)"""
         gender = "young Korean woman" if self._is_female else "young Korean man"
-        request = f"""You are a fashion image prompt engineer. Convert a Korean fashion recommendation into a detailed English image generation prompt using the following Chain-of-Thought steps.
+
+        weather_context = f"\n[Current Weather Conditions]: {weather_info}" if weather_info else ""
+
+        regenerate_context = (
+            "\n[REGENERATION REQUEST]: The user was not satisfied with the previous image and clicked 'regenerate'. "
+            "You MUST produce a completely different prompt. "
+            "CRITICAL: Do NOT reuse the same clothing items or designs from the previous generation. "
+            "Choose entirely different garment types, designs, and styles that still fit the occasion and weather. "
+            "For example, if the previous image had a blazer, use a different type of outerwear; "
+            "if it had straight-leg pants, try wide-leg, cargo, or a skirt instead. "
+            "The new outfit must look like a completely different person's wardrobe choice for the same situation."
+        ) if regenerate else ""
+
+        request = f"""You are a fashion image prompt engineer. Convert a Korean fashion recommendation into a detailed English image generation prompt using the following Chain-of-Thought steps.{weather_context}{regenerate_context}
 
 Korean fashion recommendation:
 \"\"\"{korean_style}\"\"\"
 
 Think step by step:
 
-Step 1 - Extract clothing items: Identify each specific clothing item mentioned (tops, bottoms, outerwear, shoes, accessories).
+Step 1 - Extract clothing items: Identify each specific clothing item mentioned (tops, bottoms, outerwear, shoes, accessories).{"  Since this is a REGENERATION, treat these as inspiration only — you must select DIFFERENT garment types and designs. Do not carry over any specific items from the previous generation." if regenerate else ""}
 
-Step 2 - Map to 2025 trends: For each item, map it to the closest current 2025 fashion trend keyword (e.g., quiet luxury, streetcore, Y2K revival, Seoul street style, soft tailoring, oversized silhouette, techwear, etc.).
+Step 2 - Map to 2026 trends: For each item, map it to the closest current 2026 fashion trend keyword (e.g., quiet luxury, streetcore, Y2K revival, Seoul street style, soft tailoring, oversized silhouette, techwear, etc.).{"  Choose a different trend direction than what was previously used." if regenerate else ""}
 
-Step 3 - Add visual details: For each item, add specific visual descriptors (fabric texture, fit, color palette, layering, proportions) that make the outfit look modern and editorial.
+Step 3 - Add visual details & Weather Adaptability: For each item, add specific visual descriptors (fabric texture, fit, color palette, layering, proportions). Ensure the fabric weight, thickness, and layering logic are highly realistic and strictly appropriate for the given weather/temperature condition ({weather_info if weather_info else 'seasonal weather'}). If it's rainy, sunny, or cold, adjust the material appearance (e.g., lightweight linen for hot weather, heavy wool for cold, waterproof sheen or holding an umbrella for rain).
 
-Step 4 - Compose final prompt: Write a single English image prompt describing the full outfit in detail. The subject is a {gender}.
+Step 4 - Compose final prompt: Write a single English image prompt describing the full outfit in detail. The subject is a {gender}.{"  REGENERATION RULE: The final outfit must use different clothing items and designs from the previous version — different garment types, different silhouettes, different color story, different styling direction." if regenerate else ""}
 
 Output ONLY the final English prompt from Step 4. No explanations, no Korean, no step labels.
-Format: "wearing [detailed outfit description with trend-accurate styling]"
+Format: "wearing [detailed outfit description with trend-accurate and weather-appropriate styling]"
 """
         response = self._client.models.generate_content(
             model=self._text_model,
             contents=request,
             config=types.GenerateContentConfig(
                 max_output_tokens=256,
-                temperature=0.4,
+                temperature=1.0 if regenerate else 0.4,
             ),
         )
         return response.text.strip()
 
-    # def _build_image_prompt(self, english_style: str) -> str:
-    #     gender = "young Korean woman" if self._is_female else "young Korean man"
-    #     return (
-    #         f"A full-body fashion editorial photo of a {gender} {english_style}. "
-    #         "Seoul street background, natural daylight, shot on film camera, "
-    #         "high quality, photorealistic, fashion magazine style. "
-    #         "No text, no letters, no watermark, no captions, no overlays."
-    #     )
-    
-    def _build_image_prompt(self, english_style: str) -> str:
+    def _build_image_prompt(self, english_style: str, weather_info: str = "", regenerate: bool = False) -> str:
         gender = "young Korean woman" if self._is_female else "young Korean man"
-        
-        # 매 호출마다 달라지는 고유 ID 생성 (동일 프롬프트로 인한 고착화 방지)
         variation_id = str(uuid.uuid4())[:8]
 
-        return (
-            # 강력하고 구체적인 다양성 지시 (이전 제안보다 훨씬 강력해짐!)
+        # 날씨 기온 정보에 따른 배경 환경 조건 정의
+        weather_environment = "Seoul street background, natural daylight"
+        if weather_info:
+            weather_environment = (
+                f"Seoul street background perfectly matching the weather condition '{weather_info}'. "
+                f"Adjust the ambient lighting, sky texture, and ground surface (e.g., wet asphalt with puddle reflections for rain, "
+                f"bright cinematic sunlight with harsh shadows for hot sunny weather, or soft overcast diffused light for cloudy days) to realistically reflect this climate."
+            )
+
+        regen_prefix = (
+            "THIS IS A REGENERATION — the user rejected the previous image. "
+            "You MUST NOT reproduce the same clothing items, designs, or visual style as the previous image. "
+            "Use completely different garment types, cuts, colors, and fashion aesthetic. "
+        ) if regenerate else (
             "THIS IS A NEW, DISTINCT GENERATION. DO NOT CREATE ANYTHING SIMILAR TO PREVIOUS VERSIONS. "
+        )
+
+        return (
+            f"{regen_prefix}"
             f"Generate a completely unique and original interpretation of this outfit for a {gender} [Variation ID: {variation_id}]. "
             "Ensure ALL garment details, fabrics, textures, colors, and designs are distinctly different from ANY previous interpretations of this exact prompt. "
             "Change the silhouette, lapel design, button style, pocket placements, fabric weave, and color nuances of all clothing items. "
             "If specific items are mentioned (e.g., 'black blazer'), do not produce the same black blazer; create a completely new one with different characteristics. "
-            
-            # 코디 설명
+
+            # 코디 설명 적용
             f"{english_style}. "
-            
-            # 배경 및 스타일
-            "Seoul street background, natural daylight, shot on film camera, "
-            "high quality, photorealistic, fashion magazine style. "
-            
+
+            # 날씨 정보 기반 배경 및 촬영 스타일
+            f"{weather_environment}, shot on film camera, high quality, photorealistic, fashion magazine style. "
+
             # 불필요한 요소 제거
             "No text, no letters, no watermark, no captions, no overlays."
         )
@@ -133,10 +153,11 @@ Format: "wearing [detailed outfit description with trend-accurate styling]"
     def reset_history(self):
         self._history = []
         self._last_style = ""
+        self._last_weather = ""
         print("[GeminiChat] 히스토리 초기화")
 
-    def ask(self, user_text: str, is_female=None) -> str:
-        """텍스트 답변 반환"""
+    def ask(self, user_text: str, is_female=None, weather_info: str = "") -> str:
+        """텍스트 답변 반환 및 날씨 콘텍스트 기록"""
         if is_female is not None and is_female != self._is_female:
             gender_str = "여성" if is_female else "남성"
             self._history.append(
@@ -172,21 +193,23 @@ Format: "wearing [detailed outfit description with trend-accurate styling]"
         self._history.append(
             types.Content(role="model", parts=[types.Part(text=reply)])
         )
-        # 한국어 답변을 영문 이미지 프롬프트로 변환해서 저장
-        self._last_style = self._translate_to_image_prompt(reply)
+
+        # 현재 날씨 상태 저장 및 영문 이미지 프롬프트 변환 시 인자로 주입
+        self._last_weather = weather_info
+        self._last_reply = reply
+        self._last_style = self._translate_to_image_prompt(reply, weather_info=weather_info)
         print(f"[GeminiChat] image prompt: {self._last_style}")
         return reply
 
-    def generate_image(self, style_description: str = "") -> bytes:
-        """
-        코디 이미지 생성 → PNG bytes 반환
-
-        Parameters
-        ----------
-        style_description : str
-            비어 있으면 마지막 ask() 답변을 자동 사용
-        """
-        prompt = self._build_image_prompt(style_description or self._last_style)
+    def generate_image(self, style_description: str = "", weather_info: str = "", regenerate: bool = False) -> bytes:
+        """코디 이미지 생성 → PNG bytes 반환 (동적 백그라운드 반영)"""
+        current_weather = weather_info or self._last_weather
+        if regenerate and self._last_reply:
+            english_style = self._translate_to_image_prompt(self._last_reply, weather_info=current_weather, regenerate=True)
+            print(f"[GeminiChat] regenerated image prompt: {english_style}")
+        else:
+            english_style = style_description or self._last_style
+        prompt = self._build_image_prompt(english_style, weather_info=current_weather, regenerate=regenerate)
 
         response = self._client.models.generate_content(
             model=self._image_model,
@@ -203,16 +226,13 @@ Format: "wearing [detailed outfit description with trend-accurate styling]"
         parts = candidates[0].content.parts
         print(f"[DEBUG] parts count: {len(parts)}")
         for i, part in enumerate(parts):
-            print(
-                f"[DEBUG] part[{i}] inline_data={part.inline_data is not None}, text={repr(part.text)[:80] if part.text else None}")
             if part.inline_data is not None:
-                return part.inline_data.data  # bytes (PNG)
+                return part.inline_data.data
 
         raise RuntimeError(f"이미지 데이터를 받지 못했습니다. parts={parts}")
 
-    def generate_image_b64(self, style_description: str = "") -> str:
-        """이미지를 base64 문자열로 반환 (HTML <img src> 에 바로 사용 가능)"""
-        raw = self.generate_image(style_description)
+    def generate_image_b64(self, style_description: str = "", weather_info: str = "", regenerate: bool = False) -> str:
+        raw = self.generate_image(style_description, weather_info=weather_info, regenerate=regenerate)
         return base64.b64encode(raw).decode("utf-8")
 
     @property
