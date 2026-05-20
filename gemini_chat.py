@@ -57,6 +57,7 @@ class GeminiChat:
         self._last_style = ""  # 마지막 코디 설명 (이미지 생성 프롬프트용)
         self._last_reply = ""  # 마지막 한국어 답변 (재생성 시 재번역용)
         self._last_weather = ""  # 마지막 대화 시점의 날씨 정보 저장
+        self._current_location = ""  # 현재 지역 (지역 변경 감지용)
 
     # ── 내부 ──────────────────────────────────────
 
@@ -174,10 +175,18 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
         self._history = []
         self._last_style = ""
         self._last_weather = ""
+        self._current_location = ""
         print("[GeminiChat] 히스토리 초기화")
 
-    def ask(self, user_text: str, is_female=None, weather_info: str = "") -> str:
+    def ask(self, user_text: str, is_female=None, weather_info: str = "", location: str = "") -> str:
         """텍스트 답변 반환 및 날씨 콘텍스트 기록"""
+        if location and location != self._current_location:
+            if self._current_location:
+                print(f"[GeminiChat] 지역 변경 감지: {self._current_location} → {location}, 히스토리 초기화")
+                self._history = []
+                self._last_style = ""
+                self._last_weather = ""
+            self._current_location = location
         if is_female is not None and is_female != self._is_female:
             gender_str = "여성" if is_female else "남성"
             self._history.append(

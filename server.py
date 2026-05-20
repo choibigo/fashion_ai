@@ -43,13 +43,14 @@ def chat():
     data = request.get_json(silent=True) or {}
     user_text = data.get("message", "").strip()
     is_female = bool(data.get("is_female", False))
-    weather_info = data.get("weather_info", "").strip()  # 날씨 정보 파싱 추가
+    weather_info = data.get("weather_info", "").strip()
+    location = data.get("location", "").strip()
 
     if not user_text:
         return jsonify({"error": "message 필드가 비어 있습니다."}), 400
 
     try:
-        reply = bot.ask(user_text, is_female=is_female, weather_info=weather_info)
+        reply = bot.ask(user_text, is_female=is_female, weather_info=weather_info, location=location)
         return jsonify({"reply": reply})
     except Exception as e:
         import traceback;

@@ -835,7 +835,7 @@
             const now = Date.now();
             if (now - lastClickTime < 300) return;
             lastClickTime = now;
-            processUserMessage(loc.query);
+            processUserMessage(loc.query, loc.name);
         });
     });
     map.fitBounds(L.latLngBounds(locations.map(l => [l.lat, l.lng])), {padding: isMobile ? [20, 20] : [300, 300]});
@@ -867,11 +867,11 @@
     function hideTyping() { typingIndicator.style.display = 'none'; }
 
     // ── API 호출: 텍스트 (날씨 수용 파라미터 내장) ────────────
-    async function askText(text, isFemale, weatherInfo) {
+    async function askText(text, isFemale, weatherInfo, location = '') {
         const res = await fetch(`${API_BASE}/chat`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({message: text, is_female: isFemale, weather_info: weatherInfo}),
+            body: JSON.stringify({message: text, is_female: isFemale, weather_info: weatherInfo, location}),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `서버 오류 (${res.status})`);
@@ -891,14 +891,15 @@
     }
 
     // ── 메시지 처리 ───────────────────────────────────────────
-    function processUserMessage(text) {
+    function processUserMessage(text, location = '') {
         if (!text) return;
         document.querySelectorAll('.action-btn').forEach(b => b.remove());
         addMessage(text, 'user');
         userInput.value = '';
         showTyping();
 
-        askText(text, genderToggle.checked, seoulWeatherStatus)
+        const detectedLocation = location || (LOCATION_KEYWORDS.find(kw => text.includes(kw)) ?? '');
+        askText(text, genderToggle.checked, seoulWeatherStatus, detectedLocation)
             .then(reply => {
                 hideTyping();
                 const hasLocation = LOCATION_KEYWORDS.some(kw => text.includes(kw));
