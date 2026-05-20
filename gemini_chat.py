@@ -6,6 +6,7 @@ gemini_chat.py
 """
 
 import os
+import time
 import base64
 import uuid
 from google import genai
@@ -59,6 +60,25 @@ class GeminiChat:
 
     # ── 내부 ──────────────────────────────────────
 
+    def _generate_with_retry(self, model, contents, config, max_retries=3):
+        for attempt in range(max_retries + 1):
+            try:
+                return self._client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=config,
+                )
+            except Exception as e:
+                err = str(e)
+                is_transient = any(k in err for k in ("503", "500")) or \
+                               any(k in err.lower() for k in ("service unavailable", "overloaded", "internal server error"))
+                if attempt < max_retries and is_transient:
+                    wait = 2 ** attempt
+                    print(f"[GeminiChat] 일시적 오류 (시도 {attempt+1}/{max_retries}), {wait}초 후 재시도: {err[:80]}")
+                    time.sleep(wait)
+                else:
+                    raise
+
     def _system_text(self) -> str:
         hint = GENDER_HINTS["female" if self._is_female else "male"]
         return SYSTEM_INSTRUCTION.strip() + f"\n\n[성별 힌트]\n{hint}"
@@ -97,7 +117,7 @@ Step 4 - Compose final prompt: Write a single English image prompt describing th
 Output ONLY the final English prompt from Step 4. No explanations, no Korean, no step labels.
 Format: "wearing [detailed outfit description with trend-accurate and weather-appropriate styling]"
 """
-        response = self._client.models.generate_content(
+        response = self._generate_with_retry(
             model=self._text_model,
             contents=request,
             config=types.GenerateContentConfig(
@@ -178,7 +198,7 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
             types.Content(role="user", parts=[types.Part(text=user_text)])
         )
 
-        response = self._client.models.generate_content(
+        response = self._generate_with_retry(
             model=self._text_model,
             contents=self._history,
             config=types.GenerateContentConfig(
@@ -211,7 +231,7 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
             english_style = style_description or self._last_style
         prompt = self._build_image_prompt(english_style, weather_info=current_weather, regenerate=regenerate)
 
-        response = self._client.models.generate_content(
+        response = self._generate_with_retry(
             model=self._image_model,
             contents=prompt,
             config=types.GenerateContentConfig(

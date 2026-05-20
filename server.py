@@ -57,6 +57,8 @@ def chat():
         err = str(e)
         if "429" in err or "quota" in err.lower():
             return jsonify({"error": "API 요청 한도 초과! 잠깐 뒤에 다시 물어봐줘 찍찍! 🐭⏳"}), 429
+        if "503" in err or "service unavailable" in err.lower() or "overloaded" in err.lower():
+            return jsonify({"error": "지금 AI 서버가 너무 바빠서 잠깐만 기다렸다가 다시 물어봐주세요! 🔄"}), 503
         return jsonify({"error": err}), 500
 
 
@@ -77,6 +79,8 @@ def image():
         err = str(e)
         if "429" in err or "quota" in err.lower():
             return jsonify({"error": "이미지 생성 한도 초과! 잠깐 뒤에 다시 눌러봐 찍찍! 🐭⏳"}), 429
+        if "503" in err or "service unavailable" in err.lower() or "overloaded" in err.lower():
+            return jsonify({"error": "지금 AI 서버가 너무 바빠서 이미지를 못 만들었어! 잠깐만 기다렸다가 다시 눌러봐 찍찍! 🐭🔄"}), 503
         return jsonify({"error": err}), 500
 
 
