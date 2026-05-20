@@ -122,7 +122,7 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
             contents=request,
             config=types.GenerateContentConfig(
                 max_output_tokens=256,
-                temperature=1.0 if regenerate else 0.4,
+                temperature=2.0 if regenerate else 0.4,
             ),
         )
         return response.text.strip()
