@@ -6,6 +6,7 @@ gemini_chat.py
 """
 
 import os
+import time
 import base64
 import uuid
 from google import genai
@@ -56,8 +57,28 @@ class GeminiChat:
         self._last_style = ""  # 마지막 코디 설명 (이미지 생성 프롬프트용)
         self._last_reply = ""  # 마지막 한국어 답변 (재생성 시 재번역용)
         self._last_weather = ""  # 마지막 대화 시점의 날씨 정보 저장
+        self._current_location = ""  # 현재 지역 (지역 변경 감지용)
 
     # ── 내부 ──────────────────────────────────────
+
+    def _generate_with_retry(self, model, contents, config, max_retries=3):
+        for attempt in range(max_retries + 1):
+            try:
+                return self._client.models.generate_content(
+                    model=model,
+                    contents=contents,
+                    config=config,
+                )
+            except Exception as e:
+                err = str(e)
+                is_transient = any(k in err for k in ("503", "500")) or \
+                               any(k in err.lower() for k in ("service unavailable", "overloaded", "internal server error"))
+                if attempt < max_retries and is_transient:
+                    wait = 2 ** attempt
+                    print(f"[GeminiChat] 일시적 오류 (시도 {attempt+1}/{max_retries}), {wait}초 후 재시도: {err[:80]}")
+                    time.sleep(wait)
+                else:
+                    raise
 
     def _system_text(self) -> str:
         hint = GENDER_HINTS["female" if self._is_female else "male"]
@@ -97,12 +118,12 @@ Step 4 - Compose final prompt: Write a single English image prompt describing th
 Output ONLY the final English prompt from Step 4. No explanations, no Korean, no step labels.
 Format: "wearing [detailed outfit description with trend-accurate and weather-appropriate styling]"
 """
-        response = self._client.models.generate_content(
+        response = self._generate_with_retry(
             model=self._text_model,
             contents=request,
             config=types.GenerateContentConfig(
                 max_output_tokens=256,
-                temperature=1.0 if regenerate else 0.4,
+                temperature=2.0 if regenerate else 0.4,
             ),
         )
         return response.text.strip()
@@ -154,10 +175,18 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
         self._history = []
         self._last_style = ""
         self._last_weather = ""
+        self._current_location = ""
         print("[GeminiChat] 히스토리 초기화")
 
-    def ask(self, user_text: str, is_female=None, weather_info: str = "") -> str:
+    def ask(self, user_text: str, is_female=None, weather_info: str = "", location: str = "") -> str:
         """텍스트 답변 반환 및 날씨 콘텍스트 기록"""
+        if location and location != self._current_location:
+            if self._current_location:
+                print(f"[GeminiChat] 지역 변경 감지: {self._current_location} → {location}, 히스토리 초기화")
+                self._history = []
+                self._last_style = ""
+                self._last_weather = ""
+            self._current_location = location
         if is_female is not None and is_female != self._is_female:
             gender_str = "여성" if is_female else "남성"
             self._history.append(
@@ -178,7 +207,7 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
             types.Content(role="user", parts=[types.Part(text=user_text)])
         )
 
-        response = self._client.models.generate_content(
+        response = self._generate_with_retry(
             model=self._text_model,
             contents=self._history,
             config=types.GenerateContentConfig(
@@ -211,7 +240,7 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
             english_style = style_description or self._last_style
         prompt = self._build_image_prompt(english_style, weather_info=current_weather, regenerate=regenerate)
 
-        response = self._client.models.generate_content(
+        response = self._generate_with_retry(
             model=self._image_model,
             contents=prompt,
             config=types.GenerateContentConfig(
