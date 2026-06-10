@@ -37,10 +37,10 @@ GENDER_HINTS = {
     "male": "사용자는 남성입니다. 남성 패션 아이템(자켓, 팬츠, 스니커즈 등)을 중심으로 추천하세요. 답변은 남성적인 표현으로 해주세요.",
 }
 
-TEXT_MODEL = "gemini-2.5-flash-lite"
-# TEXT_MODEL  = "gemini-3-flash-preview"    # 비싼 모델
+# TEXT_MODEL = "gemini-2.5-flash-lite"
+TEXT_MODEL = "gemini-3.1-flash-lite"
 IMAGE_MODEL = "gemini-2.5-flash-image"
-# IMAGE_MODEL = "gemini-3.1-flash-image-preview"  # 비싼 모델
+# IMAGE_MODEL = "gemini-3.1-flash-image"  # 비싼 모델
 
 
 class GeminiChat:
@@ -72,10 +72,11 @@ class GeminiChat:
             except Exception as e:
                 err = str(e)
                 is_transient = any(k in err for k in ("503", "500")) or \
-                               any(k in err.lower() for k in ("service unavailable", "overloaded", "internal server error"))
+                               any(k in err.lower() for k in
+                                   ("service unavailable", "overloaded", "internal server error"))
                 if attempt < max_retries and is_transient:
                     wait = 2 ** attempt
-                    print(f"[GeminiChat] 일시적 오류 (시도 {attempt+1}/{max_retries}), {wait}초 후 재시도: {err[:80]}")
+                    print(f"[GeminiChat] 일시적 오류 (시도 {attempt + 1}/{max_retries}), {wait}초 후 재시도: {err[:80]}")
                     time.sleep(wait)
                 else:
                     raise
@@ -234,7 +235,8 @@ Format: "wearing [detailed outfit description with trend-accurate and weather-ap
         """코디 이미지 생성 → PNG bytes 반환 (동적 백그라운드 반영)"""
         current_weather = weather_info or self._last_weather
         if regenerate and self._last_reply:
-            english_style = self._translate_to_image_prompt(self._last_reply, weather_info=current_weather, regenerate=True)
+            english_style = self._translate_to_image_prompt(self._last_reply, weather_info=current_weather,
+                                                            regenerate=True)
             print(f"[GeminiChat] regenerated image prompt: {english_style}")
         else:
             english_style = style_description or self._last_style
