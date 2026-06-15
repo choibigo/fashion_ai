@@ -3,7 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="3dedd386-fc47-4923-9d32-6ee5e5b90b6b" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/gemini_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/gemini_chat.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +84,15 @@
       <workItem from="1779250147954" duration="1338000" />
       <workItem from="1780899812084" duration="1044000" />
       <workItem from="1780907798321" duration="9000" />
-      <workItem from="1781052835931" duration="1976000" />
+      <workItem from="1781052835931" duration="2100000" />
+      <workItem from="1781061590157" duration="48000" />
+      <workItem from="1781061854919" duration="580000" />
+      <workItem from="1781074568497" duration="600000" />
+      <workItem from="1781139685652" duration="718000" />
+      <workItem from="1781141373450" duration="3101000" />
+      <workItem from="1781312797821" duration="627000" />
+      <workItem from="1781324065051" duration="4422000" />
+      <workItem from="1781425377892" duration="51000" />
     </task>
     <servers />
   </component>

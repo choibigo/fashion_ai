@@ -27,6 +27,11 @@ SYSTEM_INSTRUCTION = """
 2. 사용자의 성별에 맞는 구체적인 코디 아이템을 추천.
 3. 자신감을 불어넣는 응원 한 마디로 마무리.
 
+[2026 트렌드 반영]
+- 코디를 추천할 때는 2026년 최신 패션 트렌드를 자연스럽게 녹여주세요.
+- 트렌드 키워드 예시: 콰이어트 럭셔리, 스트리트코어, Y2K 리바이벌, 서울 스트릿, 소프트 테일러링, 오버사이즈 실루엣, 테크웨어 등.
+- 동네 분위기에 어울리는 트렌드를 골라 아이템 추천에 반영하세요.
+
 [주의]
 - 서울 동네와 관련 없는 질문에는 "어디 갈지 알려줘야 코디를 추천해줄 수 있어! 찍찍! 🐭"라고 안내하세요.
 - HTML 태그는 사용하지 마세요. 순수 텍스트로만 답변하세요.
@@ -40,6 +45,8 @@ GENDER_HINTS = {
 # TEXT_MODEL = "gemini-2.5-flash-lite"
 TEXT_MODEL = "gemini-3.1-flash-lite"
 IMAGE_MODEL = "gemini-2.5-flash-image"
+
+
 # IMAGE_MODEL = "gemini-3.1-flash-image"  # 비싼 모델
 
 
@@ -103,22 +110,22 @@ class GeminiChat:
 
         request = f"""You are a fashion image prompt engineer. Convert a Korean fashion recommendation into a detailed English image generation prompt using the following Chain-of-Thought steps.{weather_context}{regenerate_context}
 
-Korean fashion recommendation:
-\"\"\"{korean_style}\"\"\"
-
-Think step by step:
-
-Step 1 - Extract clothing items: Identify each specific clothing item mentioned (tops, bottoms, outerwear, shoes, accessories).{"  Since this is a REGENERATION, treat these as inspiration only — you must select DIFFERENT garment types and designs. Do not carry over any specific items from the previous generation." if regenerate else ""}
-
-Step 2 - Map to 2026 trends: For each item, map it to the closest current 2026 fashion trend keyword (e.g., quiet luxury, streetcore, Y2K revival, Seoul street style, soft tailoring, oversized silhouette, techwear, etc.).{"  Choose a different trend direction than what was previously used." if regenerate else ""}
-
-Step 3 - Add visual details & Weather Adaptability: For each item, add specific visual descriptors (fabric texture, fit, color palette, layering, proportions). Ensure the fabric weight, thickness, and layering logic are highly realistic and strictly appropriate for the given weather/temperature condition ({weather_info if weather_info else 'seasonal weather'}). If it's rainy, sunny, or cold, adjust the material appearance (e.g., lightweight linen for hot weather, heavy wool for cold, waterproof sheen or holding an umbrella for rain).
-
-Step 4 - Compose final prompt: Write a single English image prompt describing the full outfit in detail. The subject is a {gender}.{"  REGENERATION RULE: The final outfit must use different clothing items and designs from the previous version — different garment types, different silhouettes, different color story, different styling direction." if regenerate else ""}
-
-Output ONLY the final English prompt from Step 4. No explanations, no Korean, no step labels.
-Format: "wearing [detailed outfit description with trend-accurate and weather-appropriate styling]"
-"""
+                    Korean fashion recommendation:
+                    \"\"\"{korean_style}\"\"\"
+                    
+                    Think step by step:
+                    
+                    Step 1 - Extract clothing items: Identify each specific clothing item mentioned (tops, bottoms, outerwear, shoes, accessories).{"  Since this is a REGENERATION, treat these as inspiration only — you must select DIFFERENT garment types and designs. Do not carry over any specific items from the previous generation." if regenerate else ""}
+                    
+                    Step 2 - Map to 2026 trends: For each item, map it to the closest current 2026 fashion trend keyword (e.g., quiet luxury, streetcore, Y2K revival, Seoul street style, soft tailoring, oversized silhouette, techwear, etc.).{"  Choose a different trend direction than what was previously used." if regenerate else ""}
+                    
+                    Step 3 - Add visual details & Weather Adaptability: For each item, add specific visual descriptors (fabric texture, fit, color palette, layering, proportions). Ensure the fabric weight, thickness, and layering logic are highly realistic and strictly appropriate for the given weather/temperature condition ({weather_info if weather_info else 'seasonal weather'}). If it's rainy, sunny, or cold, adjust the material appearance (e.g., lightweight linen for hot weather, heavy wool for cold, waterproof sheen or holding an umbrella for rain).
+                    
+                    Step 4 - Compose final prompt: Write a single English image prompt describing the full outfit in detail. The subject is a {gender}.{"  REGENERATION RULE: The final outfit must use different clothing items and designs from the previous version — different garment types, different silhouettes, different color story, different styling direction." if regenerate else ""}
+                    
+                    Output ONLY the final English prompt from Step 4. No explanations, no Korean, no step labels.
+                    Format: "wearing [detailed outfit description with trend-accurate and weather-appropriate styling]"
+                    """
         response = self._generate_with_retry(
             model=self._text_model,
             contents=request,
