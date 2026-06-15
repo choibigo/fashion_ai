@@ -45,8 +45,6 @@ GENDER_HINTS = {
 # TEXT_MODEL = "gemini-2.5-flash-lite"
 TEXT_MODEL = "gemini-3.1-flash-lite"
 IMAGE_MODEL = "gemini-2.5-flash-image"
-
-
 # IMAGE_MODEL = "gemini-3.1-flash-image"  # 비싼 모델
 
 

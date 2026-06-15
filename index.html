@@ -895,11 +895,11 @@
     }
 
     // ── API 호출: 이미지 생성 (날씨 수용 파라미터 내장) ──────────
-    async function generateImage(weatherInfo) {
+    async function generateImage(weatherInfo, regenerate = false) {
         const res = await fetch(`${API_BASE}/image`, {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({weather_info: weatherInfo}),
+            body: JSON.stringify({weather_info: weatherInfo, regenerate}),
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || `이미지 생성 오류 (${res.status})`);
@@ -951,7 +951,7 @@
             showTyping();
 
             try {
-                const src = await generateImage(seoulWeatherStatus);
+                const src = await generateImage(seoulWeatherStatus, true);
                 hideTyping();
                 btn.disabled = false;
                 btn.textContent = "🔄 다시 그려줘";
