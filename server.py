@@ -85,6 +85,33 @@ def image():
         return jsonify({"error": err}), 500
 
 
+# ── /edit_image ───────────────────────────────────────────────
+@app.route("/edit_image", methods=["POST"])
+def edit_image():
+    data = request.get_json(silent=True) or {}
+    image_b64 = data.get("image_b64", "").strip()
+    instruction = data.get("instruction", "").strip()
+    weather_info = data.get("weather_info", "").strip()
+
+    if not image_b64:
+        return jsonify({"error": "image_b64 필드가 비어 있습니다."}), 400
+    if not instruction:
+        return jsonify({"error": "instruction 필드가 비어 있습니다."}), 400
+
+    try:
+        b64 = bot.edit_image_b64(image_b64, instruction, weather_info=weather_info)
+        return jsonify({"image_b64": b64})
+    except Exception as e:
+        import traceback;
+        traceback.print_exc()
+        err = str(e)
+        if "429" in err or "quota" in err.lower():
+            return jsonify({"error": "이미지 수정 한도 초과! 잠깐 뒤에 다시 해봐 찍찍! 🐭⏳"}), 429
+        if "503" in err or "service unavailable" in err.lower() or "overloaded" in err.lower():
+            return jsonify({"error": "지금 AI 서버가 너무 바빠서 수정을 못 했어! 잠깐만 기다렸다가 다시 해봐 찍찍! 🐭🔄"}), 503
+        return jsonify({"error": err}), 500
+
+
 # ── /reset ────────────────────────────────────────────────────
 @app.route("/reset", methods=["POST"])
 def reset():
