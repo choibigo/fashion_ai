@@ -45,6 +45,8 @@ GENDER_HINTS = {
 # TEXT_MODEL = "gemini-2.5-flash-lite"
 TEXT_MODEL = "gemini-3.1-flash-lite"
 IMAGE_MODEL = "gemini-2.5-flash-image"
+
+
 # IMAGE_MODEL = "gemini-3.1-flash-image"  # 비싼 모델
 
 
@@ -269,6 +271,73 @@ class GeminiChat:
 
     def generate_image_b64(self, style_description: str = "", weather_info: str = "", regenerate: bool = False) -> str:
         raw = self.generate_image(style_description, weather_info=weather_info, regenerate=regenerate)
+        return base64.b64encode(raw).decode("utf-8")
+
+    def _translate_edit_instruction(self, korean_instruction: str) -> str:
+        """한국어 수정 지시 → 짧은 영어 편집 지시. 실패 시 원문 반환."""
+        try:
+            request = (
+                "Translate this Korean clothing/photo edit instruction into a short, "
+                "concrete English image-editing instruction. "
+                "Output ONLY the English instruction, no quotes, no explanation.\n\n"
+                f"Korean: {korean_instruction}"
+            )
+            response = self._generate_with_retry(
+                model=self._text_model,
+                contents=request,
+                config=types.GenerateContentConfig(
+                    max_output_tokens=128,
+                    temperature=0.2,
+                ),
+            )
+            text = (response.text or "").strip()
+            return text or korean_instruction
+        except Exception:
+            return korean_instruction
+
+    def edit_image(self, image_b64: str, instruction: str, weather_info: str = "") -> bytes:
+        """이전 생성 이미지 + 자연어 수정 지시 → 부분 편집된 PNG bytes."""
+        if not instruction.strip():
+            raise ValueError("instruction이 비어 있습니다.")
+
+        img_bytes = base64.b64decode(image_b64)
+        english_instruction = self._translate_edit_instruction(instruction)
+        print(f"[GeminiChat] edit instruction: {english_instruction}")
+
+        edit_prompt = (
+            "Edit this fashion photo. "
+            f"Apply ONLY this change: {english_instruction}. "
+            "Keep the same person, face, hairstyle, pose, body, background, lighting, "
+            "and ALL other garments EXACTLY identical. "
+            "Do not restyle, recolor, or replace anything that was not explicitly requested. "
+            "Photorealistic, fashion magazine style. "
+            "No text, no letters, no watermark, no captions."
+        )
+
+        response = self._generate_with_retry(
+            model=self._image_model,
+            contents=[
+                types.Part.from_bytes(data=img_bytes, mime_type="image/png"),
+                edit_prompt,
+            ],
+            config=types.GenerateContentConfig(
+                response_modalities=["IMAGE", "TEXT"],
+            ),
+        )
+
+        candidates = response.candidates
+        if not candidates:
+            raise RuntimeError(f"candidates 없음. response: {response}")
+
+        parts = candidates[0].content.parts
+        for part in parts:
+            if part.inline_data is not None:
+                return part.inline_data.data
+
+        raise RuntimeError(f"편집 이미지 데이터를 받지 못했습니다. parts={parts}")
+
+    def edit_image_b64(self, image_b64: str, instruction: str, weather_info: str = "") -> str:
+        raw = self.edit_image(image_b64, instruction, weather_info=weather_info)
         return base64.b64encode(raw).decode("utf-8")
 
     @property
