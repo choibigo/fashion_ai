@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3dedd386-fc47-4923-9d32-6ee5e5b90b6b" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gemini_chat.py" beforeDir="false" afterPath="$PROJECT_DIR$/gemini_chat.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/index.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/index_api.html" beforeDir="false" afterPath="$PROJECT_DIR$/index_api.html" afterDir="false" />
     </list>
@@ -95,7 +95,8 @@
       <workItem from="1781312797821" duration="627000" />
       <workItem from="1781324065051" duration="4422000" />
       <workItem from="1781425377892" duration="51000" />
-      <workItem from="1781508423811" duration="2168000" />
+      <workItem from="1781508423811" duration="5661000" />
+      <workItem from="1781572682793" duration="4583000" />
     </task>
     <servers />
   </component>

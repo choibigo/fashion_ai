@@ -591,6 +591,52 @@
             cursor: not-allowed;
         }
 
+        .edit-row {
+            display: flex;
+            gap: 6px;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        .edit-input {
+            flex: 1;
+            min-width: 0;
+            padding: 8px 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-family: 'Noto Sans KR', sans-serif;
+            outline: none;
+        }
+
+        .edit-input:focus {
+            border-color: var(--accent);
+        }
+
+        .edit-btn {
+            padding: 8px 16px;
+            background: #fff;
+            border: 1.5px solid var(--border-color);
+            color: #666;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 700;
+            white-space: nowrap;
+            transition: all 0.2s;
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+
+        .edit-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .edit-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
         @media (max-width: 768px) {
             .app-wrapper {
                 flex-direction: column;
@@ -659,7 +705,7 @@
             </div>
         </main>
         <div class="input-area">
-            <input type="text" id="userInput" placeholder="예: 시골쥐 내일 홍대 가는데 뭐 입지?" autocomplete="off">
+            <input type="text" id="userInput" placeholder="예: 시골쥐 내일 성수 가는데 뭐 입지?" autocomplete="off">
             <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
         </div>
     </div>
@@ -906,6 +952,33 @@
         return `data:image/png;base64,${data.image_b64}`;
     }
 
+    // ── 이미지 메시지 HTML 생성 (다운로드/다시그려줘/수정칸 포함) ──
+    function imageMessageHtml(src, caption) {
+        const id = `${Date.now()}-${Math.floor(Math.random() * 1e6)}`;
+        return (
+            `<img src="${src}" class="chat-image" id="img-${id}" alt="AI 생성 코디">` +
+            `${caption}<br>` +
+            `<a class="download-btn" href="${src}" download="seoul-mouse-codi.png">⬇️ 이미지 저장</a>` +
+            `<button class="regen-btn">🔄 다시 그려줘</button>` +
+            `<div class="edit-row">` +
+            `<input type="text" class="edit-input" placeholder="이미지 수정 요청 (예: 하의만 검정으로)">` +
+            `<button class="edit-btn">✏️ 수정</button>` +
+            `</div>`
+        );
+    }
+
+    // ── API 호출: 이미지 수정 ──────────────────────────────────
+    async function editImage(imageB64, instruction, weatherInfo) {
+        const res = await fetch(`${API_BASE}/edit_image`, {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({image_b64: imageB64, instruction, weather_info: weatherInfo}),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || `이미지 수정 오류 (${res.status})`);
+        return `data:image/png;base64,${data.image_b64}`;
+    }
+
     // ── 메시지 처리 ───────────────────────────────────────────
     function processUserMessage(text, location = '') {
         if (!text) return;
@@ -933,11 +1006,40 @@
 
     // ── 이미지 버튼 클릭 ──────────────────────────────────────
     chatBox.addEventListener('click', async (e) => {
-        const btn = e.target.closest('.action-btn, .regen-btn');
+        const btn = e.target.closest('.action-btn, .regen-btn, .edit-btn');
         if (!btn) {
             // 이미지 클릭 → 모달
             if (e.target.tagName === 'IMG' && e.target.classList.contains('chat-image')) {
                 openModal(e.target.src);
+            }
+            return;
+        }
+
+        // 이미지 수정 버튼
+        if (btn.classList.contains('edit-btn')) {
+            const block = btn.closest('.message');
+            const img = block && block.querySelector('img.chat-image');
+            const input = block && block.querySelector('.edit-input');
+            if (!img || !input) return;
+            const instruction = input.value.trim();
+            if (!instruction) return;
+            const imageB64 = img.src.split(',')[1];
+
+            btn.disabled = true;
+            btn.textContent = "수정 중... ✏️⏳";
+            showTyping();
+            try {
+                const src = await editImage(imageB64, instruction, seoulWeatherStatus);
+                hideTyping();
+                btn.disabled = false;
+                btn.textContent = "✏️ 수정";
+                input.value = '';
+                addMessage(imageMessageHtml(src, "요청대로 바꿔봤어! 이건 어때? 🧀✨"), 'ai');
+            } catch (err) {
+                hideTyping();
+                btn.disabled = false;
+                btn.textContent = "✏️ 수정";
+                addMessage(`이미지 수정 중 오류가 났어 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
             }
             return;
         }
@@ -955,14 +1057,7 @@
                 hideTyping();
                 btn.disabled = false;
                 btn.textContent = "🔄 다시 그려줘";
-                const newMsgId = Date.now();
-                addMessage(
-                    `<img src="${src}" class="chat-image" id="img-${newMsgId}" alt="AI 생성 코디">` +
-                    `다른 느낌도 어때? 이것도 너한테 잘 어울릴 거야! 🧀✨<br>` +
-                    `<a class="download-btn" href="${src}" download="seoul-mouse-codi.png" id="dl-${newMsgId}">⬇️ 이미지 저장</a>` +
-                    `<button class="regen-btn" data-img-id="${newMsgId}">🔄 다시 그려줘</button>`,
-                    'ai'
-                );
+                addMessage(imageMessageHtml(src, "다른 느낌도 어때? 이것도 너한테 잘 어울릴 거야! 🧀✨"), 'ai');
             } catch (err) {
                 hideTyping();
                 btn.disabled = false;
@@ -979,20 +1074,23 @@
                 const src = await generateImage(seoulWeatherStatus);
                 hideTyping();
                 btn.style.display = 'none';
-                const msgId = Date.now();
-                addMessage(
-                    `<img src="${src}" class="chat-image" id="img-${msgId}" alt="AI 생성 코디">` +
-                    `이런 느낌 어때? 시골쥐 너한테 아주 잘 어울릴 거야! 🧀✨<br>` +
-                    `<a class="download-btn" href="${src}" download="seoul-mouse-codi.png" id="dl-${msgId}">⬇️ 이미지 저장</a>` +
-                    `<button class="regen-btn" data-img-id="${msgId}">🔄 다시 그려줘</button>`,
-                    'ai'
-                );
+                addMessage(imageMessageHtml(src, "이런 느낌 어때? 시골쥐 너한테 아주 잘 어울릴 거야! 🧀✨"), 'ai');
             } catch (err) {
                 hideTyping();
                 btn.disabled = false;
                 btn.textContent = "AI가 그려준 코디 보기 🎨";
                 addMessage(`이미지 생성 중 오류가 났어 찍찍! 🐭<br><small style="color:#aaa;">${err.message}</small>`, 'ai');
             }
+        }
+    });
+
+    // ── 수정칸 Enter 키 → 수정 버튼 클릭 ──────────────────────
+    chatBox.addEventListener('keypress', (e) => {
+        if (e.target.classList.contains('edit-input') && e.key === 'Enter') {
+            e.preventDefault();
+            const block = e.target.closest('.message');
+            const editBtn = block && block.querySelector('.edit-btn');
+            if (editBtn) editBtn.click();
         }
     });
 
