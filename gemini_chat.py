@@ -28,9 +28,11 @@ SYSTEM_INSTRUCTION = """
 3. 자신감을 불어넣는 응원 한 마디로 마무리.
 
 [2026 트렌드 반영]
-- 코디를 추천할 때는 2026년 최신 패션 트렌드를 자연스럽게 녹여주세요.
-- 트렌드 키워드 예시: 콰이어트 럭셔리, 스트리트코어, Y2K 리바이벌, 서울 스트릿, 소프트 테일러링, 오버사이즈 실루엣, 테크웨어 등.
-- 동네 분위기에 어울리는 트렌드를 골라 아이템 추천에 반영하세요.
+- 코디를 추천할 때는 아래 2026년 최신 패션 트렌드를 자연스럽게 녹여주세요.
+- [여성복] 레드·비비드 컬러(파스텔 대신 레드·블루·그린·옐로, 특히 레드가 중심), 바디 노출·란제리/슬립 드레스, Y2K 리바이벌 파티룩, 프린지·태슬 디테일, 일자핏 데님(와이드핏에서 미니멀한 일자핏으로 전환).
+- [남성복] 포엣코어(시적·서정적 무드의 프레피 룩), 컴포트 클래식(옥스포드화 대신 부드러운 스웨이드 데저트 부츠), 젠더리스(7부 팬츠·플레어 실루엣·스커트), 토탈 뉴트럴 뷰티, 뉴 펑크·빈티지·로우 럭셔리.
+- [남녀 공통] 크로스 바운더리 — 계절·기장의 고정관념을 깨는 하프 코트, 7부 바지 등 중간 길이 의류.
+- 동네 분위기와 사용자 성별에 어울리는 트렌드를 골라 아이템 추천에 반영하세요.
 
 [주의]
 - 서울 동네와 관련 없는 질문에는 "어디 갈지 알려줘야 코디를 추천해줄 수 있어! 찍찍! 🐭"라고 안내하세요.
@@ -117,7 +119,7 @@ class GeminiChat:
                     
                     Step 1 - Extract clothing items: Identify each specific clothing item mentioned (tops, bottoms, outerwear, shoes, accessories).{"  Since this is a REGENERATION, treat these as inspiration only — you must select DIFFERENT garment types and designs. Do not carry over any specific items from the previous generation." if regenerate else ""}
                     
-                    Step 2 - Map to 2026 trends: For each item, map it to the closest current 2026 fashion trend keyword (e.g., quiet luxury, streetcore, Y2K revival, Seoul street style, soft tailoring, oversized silhouette, techwear, etc.).{"  Choose a different trend direction than what was previously used." if regenerate else ""}
+                    Step 2 - Map to 2026 trends: For each item, map it to the closest current 2026 fashion trend keyword. Women's: red & vivid color (red/blue/green/yellow, red as the hero color), body-conscious lingerie/slip dress, Y2K revival party look, fringe & tassel, clean straight-leg denim. Men's: poet core (lyrical preppy mood), comfort classic (soft suede desert boots), genderless (cropped/flare silhouettes, skirts), neutral beauty grooming, new punk / vintage / low luxury. Unisex: cross-boundary mid-length pieces (half coat, cropped trousers). Pick trends that fit the subject's gender.{"  Choose a different trend direction than what was previously used." if regenerate else ""}
                     
                     Step 3 - Add visual details & Weather Adaptability: For each item, add specific visual descriptors (fabric texture, fit, color palette, layering, proportions). Ensure the fabric weight, thickness, and layering logic are highly realistic and strictly appropriate for the given weather/temperature condition ({weather_info if weather_info else 'seasonal weather'}). If it's rainy, sunny, or cold, adjust the material appearance (e.g., lightweight linen for hot weather, heavy wool for cold, waterproof sheen or holding an umbrella for rain).
                     
